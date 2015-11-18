@@ -18,6 +18,7 @@ Our expected outcome by the end of the semester will be a report with an analysi
 
 Two Bitcoins at the Price of One? http://eprint.iacr.org/2012/248.pdf
 An in-depth article that analyzes double spend attacks: https://medium.com/@octskyward/double-spending-in-bitcoin-be0f1d1e8008
+Article on Confidence Factor: https://medium.com/blockcypher-blog/from-zero-to-hero-bitcoin-transactions-in-8-seconds-7c9edcb3b734
 
 # Milestones
 *  Send transactions to specific nodes prgramatically
