@@ -24,3 +24,8 @@ Article on Confidence Factor: https://medium.com/blockcypher-blog/from-zero-to-h
 *  Send transactions to specific nodes prgramatically
 *  Investigating connections between miners to create a graph of network latency between nodes.  To accomplish this, we need to understand how nodes on the Bitcoin network discover each other and how transactions propagate across the network.  To create a latency graph, we will send transactions to selected miners and wait to hear responses back from other miners.
 *  Determine which nodes BlockCypher can see
+
+
+#Todo
+* Create node to target/bombard Blockcypher servers
+* 
