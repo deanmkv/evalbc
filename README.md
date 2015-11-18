@@ -6,6 +6,16 @@ Members:
 *  Kevin Zhao
 *  Joseph Tobin
 
+Assignments for Friday
+Viggy - programatically connect to nodes
+Kevin - progarmatically send/create transaction
+Joe - figure out protocol for sending transaction (how many RTT does it take?) and how they propagate through the network.  Also how much time to validate a transaction?  This might depend on the type of node it is...
+Dean - protocol for asking Node neighbors & constructing graph
+ ->BitNodes 21 has open source GitHub code
+
+look into python Graph visualization
+
+
 We intend to test the efficacy of the confidence level provided by Blockcypher. We will test various methods of “tricking” the confidence level provided by Blockcypher in an attempt to create a fraudulent transaction that Blockcypher recognizes as having a high confidence level.  
   
 # Plan
