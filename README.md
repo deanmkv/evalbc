@@ -28,9 +28,11 @@ To model latency between nodes, we need to understand how nodes on the Bitcoin n
 
 # Readings
 
-Two Bitcoins at the Price of One? http://eprint.iacr.org/2012/248.pdf
-An in-depth article that analyzes double spend attacks: https://medium.com/@octskyward/double-spending-in-bitcoin-be0f1d1e8008
-Article on Confidence Factor: https://medium.com/blockcypher-blog/from-zero-to-hero-bitcoin-transactions-in-8-seconds-7c9edcb3b734
+Two Bitcoins at the Price of One? http://eprint.iacr.org/2012/248.pdf  
+An in-depth article that analyzes double spend attacks: https://medium.com/@octskyward/double-spending-in-bitcoin-be0f1d1e8008  
+Article on Confidence Factor: https://medium.com/blockcypher-blog/from-zero-to-hero-bitcoin-transactions-in-8-seconds-7c9edcb3b734  
+http://blog.blockcypher.com/?p=51  
+Have a Snack, Pay with Bitcoin  http://www.tik.ee.ethz.ch/file/848064fa2e80f88a57aef43d7d5956c6/P2P2013_093.pdf  
 
 # Milestones
 *  Send transactions to specific nodes programatically
@@ -44,3 +46,4 @@ Article on Confidence Factor: https://medium.com/blockcypher-blog/from-zero-to-h
 
 # Scratch
 *  Consider conglomerating version info on the network sweep and seeing if any version string indicate BlockCypher code
+*  http://dev.blockcypher.com/#txconfidence  use their raw count against them: send 2 transactions to two halves of the network to work towards a partition
