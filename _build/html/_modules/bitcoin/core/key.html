@@ -1,0 +1,649 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>bitcoin.core.key &mdash; python-bitcoinlib 0.5.1-SNAPSHOT documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.5.1-SNAPSHOT',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="python-bitcoinlib 0.5.1-SNAPSHOT documentation" href="../../../index.html" />
+    <link rel="up" title="bitcoin.core" href="../core.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../../bitcoin.html" >bitcoin</a> &raquo;</li>
+          <li class="nav-item nav-item-3"><a href="../core.html" accesskey="U">bitcoin.core</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bitcoin.core.key</h1><div class="highlight"><pre>
+<span class="c"># Copyright (C) 2011 Sam Rushing</span>
+<span class="c"># Copyright (C) 2012-2015 The python-bitcoinlib developers</span>
+<span class="c">#</span>
+<span class="c"># This file is part of python-bitcoinlib.</span>
+<span class="c">#</span>
+<span class="c"># It is subject to the license terms in the LICENSE file found in the top-level</span>
+<span class="c"># directory of this distribution.</span>
+<span class="c">#</span>
+<span class="c"># No part of python-bitcoinlib, including this file, may be copied, modified,</span>
+<span class="c"># propagated, or distributed except according to the terms contained in the</span>
+<span class="c"># LICENSE file.</span>
+
+<span class="sd">&quot;&quot;&quot;ECC secp256k1 crypto routines</span>
+
+<span class="sd">WARNING: This module does not mlock() secrets; your private keys may end up on</span>
+<span class="sd">disk in swap! Use with caution!</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">ctypes</span>
+<span class="kn">import</span> <span class="nn">ctypes.util</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">bitcoin</span>
+<span class="kn">import</span> <span class="nn">bitcoin.signature</span>
+
+<span class="n">_bchr</span> <span class="o">=</span> <span class="nb">chr</span>
+<span class="n">_bord</span> <span class="o">=</span> <span class="nb">ord</span>
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;</span> <span class="s">&#39;3&#39;</span><span class="p">:</span>
+    <span class="n">_bchr</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">x</span><span class="p">])</span>
+    <span class="n">_bord</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+
+<span class="kn">import</span> <span class="nn">bitcoin.core.script</span>
+
+<span class="n">_ssl</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">cdll</span><span class="o">.</span><span class="n">LoadLibrary</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">find_library</span><span class="p">(</span><span class="s">&#39;ssl&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="s">&#39;libeay32&#39;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">OpenSSLException</span><span class="p">(</span><span class="ne">EnvironmentError</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="c"># Thx to Sam Devlin for the ctypes magic 64-bit fix (FIXME: should this</span>
+<span class="c"># be applied to every OpenSSL call whose return type is a pointer?)</span>
+<span class="k">def</span> <span class="nf">_check_res_void_p</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span> <span class="c"># pylint: disable=unused-argument</span>
+    <span class="k">if</span> <span class="n">val</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">errno</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">ERR_get_error</span><span class="p">()</span>
+        <span class="n">errmsg</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="mi">120</span><span class="p">)</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">ERR_error_string_n</span><span class="p">(</span><span class="n">errno</span><span class="p">,</span> <span class="n">errmsg</span><span class="p">,</span> <span class="mi">120</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">OpenSSLException</span><span class="p">(</span><span class="n">errno</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">errmsg</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_add</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_add</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_bin2bn</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_bin2bn</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_char_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_cmp</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_cmp</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_copy</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_copy</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_free</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_free</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_mod_inverse</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_mod_inverse</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_mod_mul</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_mod_mul</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_mod_sub</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_mod_sub</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_mul_word</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_mul_word</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_new</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_res_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_new</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_new</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_rshift</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_rshift</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_rshift1</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_rshift1</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_sub</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_sub</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="c"># _ssl.BN_zero.restype = ctypes.c_int</span>
+<span class="c"># _ssl.BN_zero.argtypes = [ctypes.c_void_p]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_free</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_free</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_get</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_get</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_new</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_res_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_new</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_new</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_GROUP_get_curve_GFp</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_GROUP_get_curve_GFp</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_GROUP_get_degree</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_GROUP_get_degree</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_GROUP_get_order</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_GROUP_get_order</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_free</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_free</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_new_by_curve_name</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_res_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_new_by_curve_name</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_new_by_curve_name</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_get0_group</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_get0_group</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_get0_public_key</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_get0_public_key</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_set_conv_form</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_set_conv_form</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_set_private_key</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_set_private_key</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_set_public_key</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_set_public_key</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_free</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_free</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_is_at_infinity</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_is_at_infinity</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_new</span><span class="o">.</span><span class="n">errcheck</span> <span class="o">=</span> <span class="n">_check_res_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_new</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_new</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_mul</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_mul</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_set_compressed_coordinates_GFp</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_set_compressed_coordinates_GFp</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_sign</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_sign</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_size</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_size</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_verify</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_verify</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_SIG_free</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_SIG_free</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">ECDH_compute_key</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">ECDH_compute_key</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">ERR_error_string_n</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">ERR_error_string_n</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_ulong</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_char_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_size_t</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">ERR_get_error</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_ulong</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">ERR_get_error</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">d2i_ECDSA_SIG</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">d2i_ECDSA_SIG</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">d2i_ECPrivateKey</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">d2i_ECPrivateKey</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">i2d_ECDSA_SIG</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">i2d_ECDSA_SIG</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">i2d_ECPrivateKey</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">i2d_ECPrivateKey</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">i2o_ECPublicKey</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">i2o_ECPublicKey</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">_ssl</span><span class="o">.</span><span class="n">o2i_ECPublicKey</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">o2i_ECPublicKey</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">]</span>
+
+<span class="c"># this specifies the curve used with ECDSA.</span>
+<span class="n">_NID_secp256k1</span> <span class="o">=</span> <span class="mi">714</span> <span class="c"># from openssl/obj_mac.h</span>
+
+<span class="c"># test that OpenSSL supports secp256k1</span>
+<span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_new_by_curve_name</span><span class="p">(</span><span class="n">_NID_secp256k1</span><span class="p">)</span>
+
+<span class="c"># From openssl/ecdsa.h</span>
+<span class="k">class</span> <span class="nc">ECDSA_SIG_st</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="n">_fields_</span> <span class="o">=</span> <span class="p">[(</span><span class="s">&quot;r&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">),</span>
+                <span class="p">(</span><span class="s">&quot;s&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">)]</span>
+
+<div class="viewcode-block" id="CECKey"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CECKey">[docs]</a><span class="k">class</span> <span class="nc">CECKey</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Wrapper around OpenSSL&#39;s EC_KEY&quot;&quot;&quot;</span>
+
+    <span class="n">POINT_CONVERSION_COMPRESSED</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">POINT_CONVERSION_UNCOMPRESSED</span> <span class="o">=</span> <span class="mi">4</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_new_by_curve_name</span><span class="p">(</span><span class="n">_NID_secp256k1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">_ssl</span><span class="p">:</span>
+            <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_free</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="CECKey.set_secretbytes"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CECKey.set_secretbytes">[docs]</a>    <span class="k">def</span> <span class="nf">set_secretbytes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">secret</span><span class="p">):</span>
+        <span class="n">priv_key</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_bin2bn</span><span class="p">(</span><span class="n">secret</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_new</span><span class="p">())</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_get0_group</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">pub_key</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_new</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+        <span class="n">ctx</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_new</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_mul</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">pub_key</span><span class="p">,</span> <span class="n">priv_key</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Could not derive public key from the supplied secret.&quot;</span><span class="p">)</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_mul</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">pub_key</span><span class="p">,</span> <span class="n">priv_key</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_set_private_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">priv_key</span><span class="p">)</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_set_public_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">pub_key</span><span class="p">)</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_free</span><span class="p">(</span><span class="n">pub_key</span><span class="p">)</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_free</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span>
+</div>
+<div class="viewcode-block" id="CECKey.set_privkey"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CECKey.set_privkey">[docs]</a>    <span class="k">def</span> <span class="nf">set_privkey</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mb</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">d2i_ECPrivateKey</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">),</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">pointer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mb</span><span class="p">)),</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="CECKey.set_pubkey"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CECKey.set_pubkey">[docs]</a>    <span class="k">def</span> <span class="nf">set_pubkey</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mb</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">o2i_ECPublicKey</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">),</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">pointer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mb</span><span class="p">)),</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="CECKey.get_privkey"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CECKey.get_privkey">[docs]</a>    <span class="k">def</span> <span class="nf">get_privkey</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">i2d_ECPrivateKey</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">mb_pri</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">i2d_ECPrivateKey</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">pointer</span><span class="p">(</span><span class="n">mb_pri</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">mb_pri</span><span class="o">.</span><span class="n">raw</span>
+</div>
+<div class="viewcode-block" id="CECKey.get_pubkey"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CECKey.get_pubkey">[docs]</a>    <span class="k">def</span> <span class="nf">get_pubkey</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">i2o_ECPublicKey</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">mb</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">i2o_ECPublicKey</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">pointer</span><span class="p">(</span><span class="n">mb</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">mb</span><span class="o">.</span><span class="n">raw</span>
+</div>
+<div class="viewcode-block" id="CECKey.get_raw_ecdh_key"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CECKey.get_raw_ecdh_key">[docs]</a>    <span class="k">def</span> <span class="nf">get_raw_ecdh_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_pubkey</span><span class="p">):</span>
+        <span class="n">ecdh_keybuffer</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">ECDH_compute_key</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">pointer</span><span class="p">(</span><span class="n">ecdh_keybuffer</span><span class="p">),</span> <span class="mi">32</span><span class="p">,</span>
+                                 <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_get0_public_key</span><span class="p">(</span><span class="n">other_pubkey</span><span class="o">.</span><span class="n">k</span><span class="p">),</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span> <span class="o">!=</span> <span class="mi">32</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;CKey.get_ecdh_key(): ECDH_compute_key() failed&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ecdh_keybuffer</span><span class="o">.</span><span class="n">raw</span>
+</div>
+<div class="viewcode-block" id="CECKey.get_ecdh_key"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CECKey.get_ecdh_key">[docs]</a>    <span class="k">def</span> <span class="nf">get_ecdh_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_pubkey</span><span class="p">,</span> <span class="n">kdf</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">digest</span><span class="p">()):</span>
+        <span class="c"># FIXME: be warned it&#39;s not clear what the kdf should be as a default</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_raw_ecdh_key</span><span class="p">(</span><span class="n">other_pubkey</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">kdf</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CECKey.sign"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CECKey.sign">[docs]</a>    <span class="k">def</span> <span class="nf">sign</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">hash</span><span class="p">):</span> <span class="c"># pylint: disable=redefined-builtin</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">hash</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;Hash must be bytes instance; got </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">hash</span><span class="o">.</span><span class="n">__class__</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">hash</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">32</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Hash must be exactly 32 bytes long&#39;</span><span class="p">)</span>
+
+        <span class="n">sig_size0</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint32</span><span class="p">()</span>
+        <span class="n">sig_size0</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">mb_sig</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="n">sig_size0</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_sign</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">hash</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nb">hash</span><span class="p">),</span> <span class="n">mb_sig</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">sig_size0</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="mi">1</span> <span class="o">==</span> <span class="n">result</span>
+        <span class="k">if</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">script</span><span class="o">.</span><span class="n">IsLowDERSignature</span><span class="p">(</span><span class="n">mb_sig</span><span class="o">.</span><span class="n">raw</span><span class="p">[:</span><span class="n">sig_size0</span><span class="o">.</span><span class="n">value</span><span class="p">]):</span>
+            <span class="k">return</span> <span class="n">mb_sig</span><span class="o">.</span><span class="n">raw</span><span class="p">[:</span><span class="n">sig_size0</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">signature_to_low_s</span><span class="p">(</span><span class="n">mb_sig</span><span class="o">.</span><span class="n">raw</span><span class="p">[:</span><span class="n">sig_size0</span><span class="o">.</span><span class="n">value</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="CECKey.sign_compact"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CECKey.sign_compact">[docs]</a>    <span class="k">def</span> <span class="nf">sign_compact</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">hash</span><span class="p">):</span> <span class="c"># pylint: disable=redefined-builtin</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">hash</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;Hash must be bytes instance; got </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">hash</span><span class="o">.</span><span class="n">__class__</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">hash</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">32</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Hash must be exactly 32 bytes long&#39;</span><span class="p">)</span>
+
+        <span class="n">sig_size0</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint32</span><span class="p">()</span>
+        <span class="n">sig_size0</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">mb_sig</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="n">sig_size0</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_sign</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">hash</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nb">hash</span><span class="p">),</span> <span class="n">mb_sig</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">sig_size0</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="mi">1</span> <span class="o">==</span> <span class="n">result</span>
+
+        <span class="k">if</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">script</span><span class="o">.</span><span class="n">IsLowDERSignature</span><span class="p">(</span><span class="n">mb_sig</span><span class="o">.</span><span class="n">raw</span><span class="p">[:</span><span class="n">sig_size0</span><span class="o">.</span><span class="n">value</span><span class="p">]):</span>
+            <span class="n">sig</span> <span class="o">=</span> <span class="n">mb_sig</span><span class="o">.</span><span class="n">raw</span><span class="p">[:</span><span class="n">sig_size0</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signature_to_low_s</span><span class="p">(</span><span class="n">mb_sig</span><span class="o">.</span><span class="n">raw</span><span class="p">[:</span><span class="n">sig_size0</span><span class="o">.</span><span class="n">value</span><span class="p">])</span>
+
+        <span class="n">sig</span> <span class="o">=</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">signature</span><span class="o">.</span><span class="n">DERSignature</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span>
+
+        <span class="n">r_val</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">r</span>
+        <span class="n">s_val</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">s</span>
+
+        <span class="c"># assert that the r and s are less than 32 long, excluding leading 0s</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">r_val</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">32</span> <span class="ow">or</span> <span class="n">r_val</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">32</span><span class="p">]</span> <span class="o">==</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\x00</span><span class="s">&#39;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">s_val</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">32</span> <span class="ow">or</span> <span class="n">s_val</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">32</span><span class="p">]</span> <span class="o">==</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\x00</span><span class="s">&#39;</span>
+
+        <span class="c"># ensure r and s are always 32 chars long by 0padding</span>
+        <span class="n">r_val</span> <span class="o">=</span> <span class="p">((</span><span class="n">b</span><span class="s">&#39;</span><span class="se">\x00</span><span class="s">&#39;</span> <span class="o">*</span> <span class="mi">32</span><span class="p">)</span> <span class="o">+</span> <span class="n">r_val</span><span class="p">)[</span><span class="o">-</span><span class="mi">32</span><span class="p">:]</span>
+        <span class="n">s_val</span> <span class="o">=</span> <span class="p">((</span><span class="n">b</span><span class="s">&#39;</span><span class="se">\x00</span><span class="s">&#39;</span> <span class="o">*</span> <span class="mi">32</span><span class="p">)</span> <span class="o">+</span> <span class="n">s_val</span><span class="p">)[</span><span class="o">-</span><span class="mi">32</span><span class="p">:]</span>
+
+        <span class="c"># tmp pubkey of self, but always compressed</span>
+        <span class="n">pubkey</span> <span class="o">=</span> <span class="n">CECKey</span><span class="p">()</span>
+        <span class="n">pubkey</span><span class="o">.</span><span class="n">set_pubkey</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_pubkey</span><span class="p">())</span>
+        <span class="n">pubkey</span><span class="o">.</span><span class="n">set_compressed</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+        <span class="c"># bitcoin core does &lt;4, but I&#39;ve seen other places do &lt;2 and I&#39;ve never seen a i &gt; 1 so far</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+            <span class="n">cec_key</span> <span class="o">=</span> <span class="n">CECKey</span><span class="p">()</span>
+            <span class="n">cec_key</span><span class="o">.</span><span class="n">set_compressed</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+            <span class="n">result</span> <span class="o">=</span> <span class="n">cec_key</span><span class="o">.</span><span class="n">recover</span><span class="p">(</span><span class="n">r_val</span><span class="p">,</span> <span class="n">s_val</span><span class="p">,</span> <span class="nb">hash</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nb">hash</span><span class="p">),</span> <span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">result</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cec_key</span><span class="o">.</span><span class="n">get_pubkey</span><span class="p">()</span> <span class="o">==</span> <span class="n">pubkey</span><span class="o">.</span><span class="n">get_pubkey</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="n">r_val</span> <span class="o">+</span> <span class="n">s_val</span><span class="p">,</span> <span class="n">i</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span>
+</div>
+<div class="viewcode-block" id="CECKey.signature_to_low_s"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CECKey.signature_to_low_s">[docs]</a>    <span class="k">def</span> <span class="nf">signature_to_low_s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sig</span><span class="p">):</span>
+        <span class="n">der_sig</span> <span class="o">=</span> <span class="n">ECDSA_SIG_st</span><span class="p">()</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">d2i_ECDSA_SIG</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">pointer</span><span class="p">(</span><span class="n">der_sig</span><span class="p">)),</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_char_p</span><span class="p">(</span><span class="n">sig</span><span class="p">)),</span> <span class="nb">len</span><span class="p">(</span><span class="n">sig</span><span class="p">))</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_get0_group</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_new</span><span class="p">()</span>
+        <span class="n">halforder</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_new</span><span class="p">()</span>
+        <span class="n">ctx</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_new</span><span class="p">()</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_GROUP_get_order</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_rshift1</span><span class="p">(</span><span class="n">halforder</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+
+        <span class="c"># Verify that s is over half the order of the curve before we actually subtract anything from it</span>
+        <span class="k">if</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_cmp</span><span class="p">(</span><span class="n">der_sig</span><span class="o">.</span><span class="n">s</span><span class="p">,</span> <span class="n">halforder</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+          <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_sub</span><span class="p">(</span><span class="n">der_sig</span><span class="o">.</span><span class="n">s</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">der_sig</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_free</span><span class="p">(</span><span class="n">halforder</span><span class="p">)</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_free</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_free</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+
+        <span class="n">derlen</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">i2d_ECDSA_SIG</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">pointer</span><span class="p">(</span><span class="n">der_sig</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">derlen</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_SIG_free</span><span class="p">(</span><span class="n">der_sig</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="n">new_sig</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="n">derlen</span><span class="p">)</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">i2d_ECDSA_SIG</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">pointer</span><span class="p">(</span><span class="n">der_sig</span><span class="p">),</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">pointer</span><span class="p">(</span><span class="n">new_sig</span><span class="p">)))</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_free</span><span class="p">(</span><span class="n">der_sig</span><span class="o">.</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_free</span><span class="p">(</span><span class="n">der_sig</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">new_sig</span><span class="o">.</span><span class="n">raw</span>
+</div>
+<div class="viewcode-block" id="CECKey.verify"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CECKey.verify">[docs]</a>    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">hash</span><span class="p">,</span> <span class="n">sig</span><span class="p">):</span> <span class="c"># pylint: disable=redefined-builtin</span>
+        <span class="sd">&quot;&quot;&quot;Verify a DER signature&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sig</span><span class="p">:</span>
+          <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="c"># New versions of OpenSSL will reject non-canonical DER signatures. de/re-serialize first.</span>
+        <span class="n">norm_sig</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">d2i_ECDSA_SIG</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">norm_sig</span><span class="p">),</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_char_p</span><span class="p">(</span><span class="n">sig</span><span class="p">)),</span> <span class="nb">len</span><span class="p">(</span><span class="n">sig</span><span class="p">))</span>
+
+        <span class="n">derlen</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">i2d_ECDSA_SIG</span><span class="p">(</span><span class="n">norm_sig</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">derlen</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_SIG_free</span><span class="p">(</span><span class="n">norm_sig</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="n">norm_der</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="n">derlen</span><span class="p">)</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">i2d_ECDSA_SIG</span><span class="p">(</span><span class="n">norm_sig</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">pointer</span><span class="p">(</span><span class="n">norm_der</span><span class="p">)))</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_SIG_free</span><span class="p">(</span><span class="n">norm_sig</span><span class="p">)</span>
+
+        <span class="c"># -1 = error, 0 = bad sig, 1 = good</span>
+        <span class="k">return</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">ECDSA_verify</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">hash</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nb">hash</span><span class="p">),</span> <span class="n">norm_der</span><span class="p">,</span> <span class="n">derlen</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+</div>
+<div class="viewcode-block" id="CECKey.set_compressed"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CECKey.set_compressed">[docs]</a>    <span class="k">def</span> <span class="nf">set_compressed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compressed</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">compressed</span><span class="p">:</span>
+            <span class="n">form</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">POINT_CONVERSION_COMPRESSED</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">form</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">POINT_CONVERSION_UNCOMPRESSED</span>
+        <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_set_conv_form</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">form</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CECKey.recover"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CECKey.recover">[docs]</a>    <span class="k">def</span> <span class="nf">recover</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigR</span><span class="p">,</span> <span class="n">sigS</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">msglen</span><span class="p">,</span> <span class="n">recid</span><span class="p">,</span> <span class="n">check</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform ECDSA key recovery (see SEC1 4.1.6) for curves over (mod p)-fields</span>
+
+<span class="sd">        recid selects which key is recovered</span>
+
+<span class="sd">        if check is non-zero, additional checks are performed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">recid</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">ctx</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">O</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">Q</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sigR</span><span class="p">)</span> <span class="o">==</span> <span class="mi">32</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sigR</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sigS</span><span class="p">)</span> <span class="o">==</span> <span class="mi">32</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sigS</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_bin2bn</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="n">sigR</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">sigR</span><span class="p">),</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_new</span><span class="p">())</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_bin2bn</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span>   <span class="n">sigS</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">sigS</span><span class="p">),</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_new</span><span class="p">())</span>
+
+            <span class="n">group</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_get0_group</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_new</span><span class="p">()</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_get</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_new</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_GROUP_get_order</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">2</span>
+
+            <span class="n">x</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_get</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_copy</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_mul_word</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+            <span class="n">field</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_get</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_GROUP_get_curve_GFp</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">2</span>
+
+            <span class="k">if</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_cmp</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mi">0</span>
+
+            <span class="n">R</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_new</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">R</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">2</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_set_compressed_coordinates_GFp</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">recid</span> <span class="o">%</span> <span class="mi">2</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
+                <span class="k">return</span> <span class="mi">0</span>
+
+            <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
+                <span class="n">O</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_new</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">O</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="o">-</span><span class="mi">2</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_mul</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">O</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="o">-</span><span class="mi">2</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_is_at_infinity</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">O</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="mi">0</span>
+
+            <span class="n">Q</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_new</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">Q</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">2</span>
+
+            <span class="n">n</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_GROUP_get_degree</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_get</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_bin2bn</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">msglen</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+            <span class="k">if</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">msglen</span> <span class="o">&gt;</span> <span class="n">n</span><span class="p">:</span>
+                <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_rshift</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="mi">8</span> <span class="o">-</span> <span class="p">(</span><span class="n">n</span> <span class="o">&amp;</span> <span class="mi">7</span><span class="p">))</span>
+
+            <span class="n">zero</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_get</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+            <span class="c"># if not _ssl.BN_zero(zero):</span>
+            <span class="c">#     return -1</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_mod_sub</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">zero</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">rr</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_get</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_mod_inverse</span><span class="p">(</span><span class="n">rr</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">sor</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_get</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_mod_mul</span><span class="p">(</span><span class="n">sor</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">rr</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">eor</span> <span class="o">=</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_get</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_mod_mul</span><span class="p">(</span><span class="n">eor</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">rr</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_mul</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">eor</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">sor</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">2</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_KEY_set_public_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">Q</span><span class="p">):</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">2</span>
+
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">r</span><span class="p">:</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_free</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">s</span><span class="p">:</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_free</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">BN_CTX_free</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">R</span><span class="p">:</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_free</span><span class="p">(</span><span class="n">R</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">O</span><span class="p">:</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_free</span><span class="p">(</span><span class="n">O</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">Q</span><span class="p">:</span> <span class="n">_ssl</span><span class="o">.</span><span class="n">EC_POINT_free</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="CPubKey"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CPubKey">[docs]</a><span class="k">class</span> <span class="nc">CPubKey</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An encapsulated public key</span>
+
+<span class="sd">    Attributes:</span>
+
+<span class="sd">    is_valid      - Corresponds to CPubKey.IsValid()</span>
+
+<span class="sd">    is_fullyvalid - Corresponds to CPubKey.IsFullyValid()</span>
+
+<span class="sd">    is_compressed - Corresponds to CPubKey.IsCompressed()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">_cec_key</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">CPubKey</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">buf</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">_cec_key</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">_cec_key</span> <span class="o">=</span> <span class="n">CECKey</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cec_key</span> <span class="o">=</span> <span class="n">_cec_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_fullyvalid</span> <span class="o">=</span> <span class="n">_cec_key</span><span class="o">.</span><span class="n">set_pubkey</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="CPubKey.recover_compact"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CPubKey.recover_compact">[docs]</a>    <span class="k">def</span> <span class="nf">recover_compact</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="nb">hash</span><span class="p">,</span> <span class="n">sig</span><span class="p">):</span> <span class="c"># pylint: disable=redefined-builtin</span>
+        <span class="sd">&quot;&quot;&quot;Recover a public key from a compact signature.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">65</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Signature should be 65 characters, not [</span><span class="si">%d</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sig</span><span class="p">),</span> <span class="p">))</span>
+
+        <span class="n">recid</span> <span class="o">=</span> <span class="p">(</span><span class="n">_bord</span><span class="p">(</span><span class="n">sig</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">27</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">3</span>
+        <span class="n">compressed</span> <span class="o">=</span> <span class="p">(</span><span class="n">_bord</span><span class="p">(</span><span class="n">sig</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">27</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">4</span> <span class="o">!=</span> <span class="mi">0</span>
+
+        <span class="n">cec_key</span> <span class="o">=</span> <span class="n">CECKey</span><span class="p">()</span>
+        <span class="n">cec_key</span><span class="o">.</span><span class="n">set_compressed</span><span class="p">(</span><span class="n">compressed</span><span class="p">)</span>
+
+        <span class="n">sigR</span> <span class="o">=</span> <span class="n">sig</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">33</span><span class="p">]</span>
+        <span class="n">sigS</span> <span class="o">=</span> <span class="n">sig</span><span class="p">[</span><span class="mi">33</span><span class="p">:</span><span class="mi">65</span><span class="p">]</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">cec_key</span><span class="o">.</span><span class="n">recover</span><span class="p">(</span><span class="n">sigR</span><span class="p">,</span> <span class="n">sigS</span><span class="p">,</span> <span class="nb">hash</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nb">hash</span><span class="p">),</span> <span class="n">recid</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">result</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="n">pubkey</span> <span class="o">=</span> <span class="n">cec_key</span><span class="o">.</span><span class="n">get_pubkey</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">CPubKey</span><span class="p">(</span><span class="n">pubkey</span><span class="p">,</span> <span class="n">_cec_key</span><span class="o">=</span><span class="n">cec_key</span><span class="p">)</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_compressed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="mi">33</span>
+
+<div class="viewcode-block" id="CPubKey.verify"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.key.CPubKey.verify">[docs]</a>    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">hash</span><span class="p">,</span> <span class="n">sig</span><span class="p">):</span> <span class="c"># pylint: disable=redefined-builtin</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cec_key</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="nb">hash</span><span class="p">,</span> <span class="n">sig</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># Always have represent as b&#39;&lt;secret&gt;&#39; so test cases don&#39;t have to</span>
+        <span class="c"># change for py2/3</span>
+        <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;</span> <span class="s">&#39;3&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">(</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="nb">super</span><span class="p">(</span><span class="n">CPubKey</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__repr__</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">(b</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="nb">super</span><span class="p">(</span><span class="n">CPubKey</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__repr__</span><span class="p">())</span>
+</div>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s">&#39;CECKey&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CPubKey&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../../bitcoin.html" >bitcoin</a> &raquo;</li>
+          <li class="nav-item nav-item-3"><a href="../core.html" >bitcoin.core</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2012-2015, The python-bitcoinlib developers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

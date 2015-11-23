@@ -1,0 +1,467 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>bitcoin.core.serialize &mdash; python-bitcoinlib 0.5.1-SNAPSHOT documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.5.1-SNAPSHOT',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="python-bitcoinlib 0.5.1-SNAPSHOT documentation" href="../../../index.html" />
+    <link rel="up" title="bitcoin.core" href="../core.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../../bitcoin.html" >bitcoin</a> &raquo;</li>
+          <li class="nav-item nav-item-3"><a href="../core.html" accesskey="U">bitcoin.core</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bitcoin.core.serialize</h1><div class="highlight"><pre>
+<span class="c"># Copyright (C) 2012-2014 The python-bitcoinlib developers</span>
+<span class="c">#</span>
+<span class="c"># This file is part of python-bitcoinlib.</span>
+<span class="c">#</span>
+<span class="c"># It is subject to the license terms in the LICENSE file found in the top-level</span>
+<span class="c"># directory of this distribution.</span>
+<span class="c">#</span>
+<span class="c"># No part of python-bitcoinlib, including this file, may be copied, modified,</span>
+<span class="c"># propagated, or distributed except according to the terms contained in the</span>
+<span class="c"># LICENSE file.</span>
+
+<span class="sd">&quot;&quot;&quot;Serialization routines</span>
+
+<span class="sd">You probabably don&#39;t need to use these directly.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+
+<span class="c"># Py3 compatibility</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;</span> <span class="s">&#39;3&#39;</span><span class="p">:</span>
+    <span class="n">_bchr</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">x</span><span class="p">])</span>
+    <span class="n">_bord</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span> <span class="k">as</span> <span class="n">_BytesIO</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">_bchr</span> <span class="o">=</span> <span class="nb">chr</span>
+    <span class="n">_bord</span> <span class="o">=</span> <span class="nb">ord</span>
+    <span class="kn">from</span> <span class="nn">cStringIO</span> <span class="kn">import</span> <span class="n">StringIO</span> <span class="k">as</span> <span class="n">_BytesIO</span>
+
+<span class="n">MAX_SIZE</span> <span class="o">=</span> <span class="mh">0x02000000</span>
+
+
+<div class="viewcode-block" id="Hash"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.Hash">[docs]</a><span class="k">def</span> <span class="nf">Hash</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;SHA256^2)(msg) -&gt; bytes&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span><span class="o">.</span><span class="n">digest</span><span class="p">())</span><span class="o">.</span><span class="n">digest</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Hash160"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.Hash160">[docs]</a><span class="k">def</span> <span class="nf">Hash160</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;RIPEME160(SHA256(msg)) -&gt; bytes&quot;&quot;&quot;</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s">&#39;ripemd160&#39;</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span><span class="o">.</span><span class="n">digest</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">h</span><span class="o">.</span><span class="n">digest</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="SerializationError"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.SerializationError">[docs]</a><span class="k">class</span> <span class="nc">SerializationError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for serialization errors&quot;&quot;&quot;</span>
+
+</div>
+<div class="viewcode-block" id="SerializationTruncationError"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.SerializationTruncationError">[docs]</a><span class="k">class</span> <span class="nc">SerializationTruncationError</span><span class="p">(</span><span class="n">SerializationError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Serialized data was truncated</span>
+
+<span class="sd">    Thrown by deserialize() and stream_deserialize()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</div>
+<div class="viewcode-block" id="DeserializationExtraDataError"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.DeserializationExtraDataError">[docs]</a><span class="k">class</span> <span class="nc">DeserializationExtraDataError</span><span class="p">(</span><span class="n">SerializationError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deserialized data had extra data at the end</span>
+
+<span class="sd">    Thrown by deserialize() when not all data is consumed during</span>
+<span class="sd">    deserialization. The deserialized object and extra padding not consumed are</span>
+<span class="sd">    saved.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">padding</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DeserializationExtraDataError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="o">=</span> <span class="n">padding</span>
+</div>
+<div class="viewcode-block" id="ser_read"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.ser_read">[docs]</a><span class="k">def</span> <span class="nf">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read from a stream safely</span>
+
+<span class="sd">    Raises SerializationError and SerializationTruncationError appropriately.</span>
+<span class="sd">    Use this instead of f.read() in your classes stream_(de)serialization()</span>
+<span class="sd">    functions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="n">MAX_SIZE</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">SerializationError</span><span class="p">(</span><span class="s">&#39;Asked to read 0x</span><span class="si">%x</span><span class="s"> bytes; MAX_SIZE exceeded&#39;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">SerializationTruncationError</span><span class="p">(</span><span class="s">&#39;Asked to read </span><span class="si">%i</span><span class="s"> bytes, but only got </span><span class="si">%i</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">r</span>
+
+</div>
+<div class="viewcode-block" id="Serializable"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.Serializable">[docs]</a><span class="k">class</span> <span class="nc">Serializable</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for serializable objects&quot;&quot;&quot;</span>
+
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="Serializable.stream_serialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.Serializable.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Serialize to a stream&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Serializable.stream_deserialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.Serializable.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deserialize from a stream&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+<div class="viewcode-block" id="Serializable.serialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.Serializable.serialize">[docs]</a>    <span class="k">def</span> <span class="nf">serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Serialize, returning bytes&quot;&quot;&quot;</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">_BytesIO</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Serializable.deserialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.Serializable.deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">allow_padding</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deserialize bytes, returning an instance</span>
+
+<span class="sd">        allow_padding - Allow buf to include extra padding. (default False)</span>
+
+<span class="sd">        If allow_padding is False and not all bytes are consumed during</span>
+<span class="sd">        deserialization DeserializationExtraDataError will be raised.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fd</span> <span class="o">=</span> <span class="n">_BytesIO</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">fd</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">allow_padding</span><span class="p">:</span>
+            <span class="n">padding</span> <span class="o">=</span> <span class="n">fd</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">padding</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">DeserializationExtraDataError</span><span class="p">(</span><span class="s">&#39;Not all bytes consumed during deserialization&#39;</span><span class="p">,</span>
+                                                    <span class="n">r</span><span class="p">,</span> <span class="n">padding</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">r</span>
+</div>
+<div class="viewcode-block" id="Serializable.GetHash"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.Serializable.GetHash">[docs]</a>    <span class="k">def</span> <span class="nf">GetHash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the hash of the serialized object&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">serialize</span><span class="p">())</span>
+</div>
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">)</span> <span class="ow">and</span>
+            <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">__class__</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="bp">NotImplemented</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">serialize</span><span class="p">())</span>
+</div>
+<div class="viewcode-block" id="ImmutableSerializable"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.ImmutableSerializable">[docs]</a><span class="k">class</span> <span class="nc">ImmutableSerializable</span><span class="p">(</span><span class="n">Serializable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Immutable serializable object&quot;&quot;&quot;</span>
+
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;_cached_GetHash&#39;</span><span class="p">,</span> <span class="s">&#39;_cached__hash__&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&#39;Object is immutable&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__delattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&#39;Object is immutable&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ImmutableSerializable.GetHash"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.ImmutableSerializable.GetHash">[docs]</a>    <span class="k">def</span> <span class="nf">GetHash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the hash of the serialized object&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_GetHash</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">_cached_GetHash</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ImmutableSerializable</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">GetHash</span><span class="p">()</span>
+            <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;_cached_GetHash&#39;</span><span class="p">,</span> <span class="n">_cached_GetHash</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">_cached_GetHash</span>
+</div>
+    <span class="k">def</span> <span class="nf">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached__hash__</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">_cached__hash__</span> <span class="o">=</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">serialize</span><span class="p">())</span>
+            <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;_cached__hash__&#39;</span><span class="p">,</span> <span class="n">_cached__hash__</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">_cached__hash__</span>
+</div>
+<div class="viewcode-block" id="Serializer"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.Serializer">[docs]</a><span class="k">class</span> <span class="nc">Serializer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for object serializers&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Serializer.stream_serialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.Serializer.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Serializer.stream_deserialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.Serializer.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Serializer.serialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.Serializer.serialize">[docs]</a>    <span class="k">def</span> <span class="nf">serialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">_BytesIO</span><span class="p">()</span>
+        <span class="n">cls</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Serializer.deserialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.Serializer.deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">_BytesIO</span><span class="p">(</span><span class="n">buf</span><span class="p">))</span>
+
+</div></div>
+<div class="viewcode-block" id="VarIntSerializer"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.VarIntSerializer">[docs]</a><span class="k">class</span> <span class="nc">VarIntSerializer</span><span class="p">(</span><span class="n">Serializer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Serialization of variable length ints&quot;&quot;&quot;</span>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="VarIntSerializer.stream_serialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.VarIntSerializer.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;varint must be non-negative integer&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mh">0xfd</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_bchr</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="mh">0xffff</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_bchr</span><span class="p">(</span><span class="mh">0xfd</span><span class="p">))</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;&lt;H&#39;</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="mh">0xffffffff</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_bchr</span><span class="p">(</span><span class="mh">0xfe</span><span class="p">))</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;&lt;I&#39;</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_bchr</span><span class="p">(</span><span class="mh">0xff</span><span class="p">))</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;&lt;Q&#39;</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="VarIntSerializer.stream_deserialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.VarIntSerializer.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">_bord</span><span class="p">(</span><span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="mh">0xfd</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">r</span>
+        <span class="k">elif</span> <span class="n">r</span> <span class="o">==</span> <span class="mh">0xfd</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;&lt;H&#39;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">2</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">r</span> <span class="o">==</span> <span class="mh">0xfe</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;&lt;I&#39;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;&lt;Q&#39;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">8</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+
+</div></div>
+<div class="viewcode-block" id="BytesSerializer"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.BytesSerializer">[docs]</a><span class="k">class</span> <span class="nc">BytesSerializer</span><span class="p">(</span><span class="n">Serializer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Serialization of bytes instances&quot;&quot;&quot;</span>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="BytesSerializer.stream_serialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.BytesSerializer.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">VarIntSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="BytesSerializer.stream_deserialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.BytesSerializer.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="n">VarIntSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="VectorSerializer"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.VectorSerializer">[docs]</a><span class="k">class</span> <span class="nc">VectorSerializer</span><span class="p">(</span><span class="n">Serializer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for serializers of object vectors&quot;&quot;&quot;</span>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="VectorSerializer.stream_serialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.VectorSerializer.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">inner_cls</span><span class="p">,</span> <span class="n">objs</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">VarIntSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">objs</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">objs</span><span class="p">:</span>
+            <span class="n">inner_cls</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="VectorSerializer.stream_deserialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.VectorSerializer.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">inner_cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">VarIntSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">inner_cls</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">r</span>
+
+</div></div>
+<div class="viewcode-block" id="uint256VectorSerializer"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.uint256VectorSerializer">[docs]</a><span class="k">class</span> <span class="nc">uint256VectorSerializer</span><span class="p">(</span><span class="n">Serializer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Serialize vectors of uint256&quot;&quot;&quot;</span>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="uint256VectorSerializer.stream_serialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.uint256VectorSerializer.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">uints</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">VarIntSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">uints</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">uint</span> <span class="ow">in</span> <span class="n">uints</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">uint</span><span class="p">)</span> <span class="o">==</span> <span class="mi">32</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">uint</span><span class="p">)</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="uint256VectorSerializer.stream_deserialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.uint256VectorSerializer.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">VarIntSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">32</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">r</span>
+
+</div></div>
+<div class="viewcode-block" id="intVectorSerialzer"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.intVectorSerialzer">[docs]</a><span class="k">class</span> <span class="nc">intVectorSerialzer</span><span class="p">(</span><span class="n">Serializer</span><span class="p">):</span>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="intVectorSerialzer.stream_serialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.intVectorSerialzer.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">ints</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ints</span><span class="p">)</span>
+        <span class="n">VarIntSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ints</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;i&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="intVectorSerialzer.stream_deserialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.intVectorSerialzer.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="n">VarIntSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">ints</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+            <span class="n">ints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;i&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span>
+
+</div></div>
+<div class="viewcode-block" id="VarStringSerializer"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.VarStringSerializer">[docs]</a><span class="k">class</span> <span class="nc">VarStringSerializer</span><span class="p">(</span><span class="n">Serializer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Serialize variable length strings&quot;&quot;&quot;</span>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="VarStringSerializer.stream_serialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.VarStringSerializer.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">VarIntSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="VarStringSerializer.stream_deserialize"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.VarStringSerializer.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="n">VarIntSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="uint256_from_str"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.uint256_from_str">[docs]</a><span class="k">def</span> <span class="nf">uint256_from_str</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert bytes to uint256&quot;&quot;&quot;</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;IIIIIIII&quot;</span><span class="p">,</span> <span class="n">s</span><span class="p">[:</span><span class="mi">32</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+        <span class="n">r</span> <span class="o">+=</span> <span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">32</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">r</span>
+
+</div>
+<div class="viewcode-block" id="uint256_from_compact"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.uint256_from_compact">[docs]</a><span class="k">def</span> <span class="nf">uint256_from_compact</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert compact encoding to uint256</span>
+
+<span class="sd">    Used for the nBits compact encoding of the target in the block header.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nbytes</span> <span class="o">=</span> <span class="p">(</span><span class="n">c</span> <span class="o">&gt;&gt;</span> <span class="mi">24</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+    <span class="k">if</span> <span class="n">nbytes</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="p">(</span><span class="n">c</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFF</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">-</span> <span class="n">nbytes</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="p">(</span><span class="n">c</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFF</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="p">(</span><span class="n">nbytes</span> <span class="o">-</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">v</span>
+</div>
+<div class="viewcode-block" id="compact_from_uint256"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.compact_from_uint256">[docs]</a><span class="k">def</span> <span class="nf">compact_from_uint256</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert uint256 to compact encoding</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nbytes</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">bit_length</span><span class="p">()</span> <span class="o">+</span> <span class="mi">7</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">3</span>
+    <span class="n">compact</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">nbytes</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">compact</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFF</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">-</span> <span class="n">nbytes</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">compact</span> <span class="o">=</span> <span class="n">v</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span> <span class="o">*</span> <span class="p">(</span><span class="n">nbytes</span> <span class="o">-</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">compact</span> <span class="o">=</span> <span class="n">compact</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFF</span>
+
+    <span class="c"># If the sign bit (0x00800000) is set, divide the mantissa by 256 and</span>
+    <span class="c"># increase the exponent to get an encoding without it set.</span>
+    <span class="k">if</span> <span class="n">compact</span> <span class="o">&amp;</span> <span class="mh">0x00800000</span><span class="p">:</span>
+        <span class="n">compact</span> <span class="o">&gt;&gt;=</span> <span class="mi">8</span>
+        <span class="n">nbytes</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">compact</span> <span class="o">|</span> <span class="n">nbytes</span> <span class="o">&lt;&lt;</span> <span class="mi">24</span>
+</div>
+<span class="k">def</span> <span class="nf">uint256_to_str</span><span class="p">(</span><span class="n">u</span><span class="p">):</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+        <span class="n">r</span> <span class="o">+=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;&lt;I&#39;</span><span class="p">,</span> <span class="n">u</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">32</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">r</span>
+
+<div class="viewcode-block" id="uint256_to_shortstr"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.uint256_to_shortstr">[docs]</a><span class="k">def</span> <span class="nf">uint256_to_shortstr</span><span class="p">(</span><span class="n">u</span><span class="p">):</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%064x</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">u</span><span class="p">,)</span>
+    <span class="k">return</span> <span class="n">s</span><span class="p">[:</span><span class="mi">16</span><span class="p">]</span>
+
+</div>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s">&#39;MAX_SIZE&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Hash&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Hash160&#39;</span><span class="p">,</span>
+        <span class="s">&#39;SerializationError&#39;</span><span class="p">,</span>
+        <span class="s">&#39;SerializationTruncationError&#39;</span><span class="p">,</span>
+        <span class="s">&#39;DeserializationExtraDataError&#39;</span><span class="p">,</span>
+        <span class="s">&#39;ser_read&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Serializable&#39;</span><span class="p">,</span>
+        <span class="s">&#39;ImmutableSerializable&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Serializer&#39;</span><span class="p">,</span>
+        <span class="s">&#39;VarIntSerializer&#39;</span><span class="p">,</span>
+        <span class="s">&#39;BytesSerializer&#39;</span><span class="p">,</span>
+        <span class="s">&#39;VectorSerializer&#39;</span><span class="p">,</span>
+        <span class="s">&#39;uint256VectorSerializer&#39;</span><span class="p">,</span>
+        <span class="s">&#39;intVectorSerialzer&#39;</span><span class="p">,</span>
+        <span class="s">&#39;VarStringSerializer&#39;</span><span class="p">,</span>
+        <span class="s">&#39;uint256_from_str&#39;</span><span class="p">,</span>
+        <span class="s">&#39;uint256_from_compact&#39;</span><span class="p">,</span>
+        <span class="s">&#39;compact_from_uint256&#39;</span><span class="p">,</span>
+        <span class="s">&#39;uint256_to_shortstr&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../../bitcoin.html" >bitcoin</a> &raquo;</li>
+          <li class="nav-item nav-item-3"><a href="../core.html" >bitcoin.core</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2012-2015, The python-bitcoinlib developers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

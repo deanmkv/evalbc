@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>bitcoin &mdash; python-bitcoinlib 0.5.1-SNAPSHOT documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.5.1-SNAPSHOT',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="python-bitcoinlib 0.5.1-SNAPSHOT documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bitcoin</h1><div class="highlight"><pre>
+<span class="c"># Copyright (C) 2012-2014 The python-bitcoinlib developers</span>
+<span class="c">#</span>
+<span class="c"># This file is part of python-bitcoinlib.</span>
+<span class="c">#</span>
+<span class="c"># It is subject to the license terms in the LICENSE file found in the top-level</span>
+<span class="c"># directory of this distribution.</span>
+<span class="c">#</span>
+<span class="c"># No part of python-bitcoinlib, including this file, may be copied, modified,</span>
+<span class="c"># propagated, or distributed except according to the terms contained in the</span>
+<span class="c"># LICENSE file.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">bitcoin.core</span>
+
+<span class="c"># Note that setup.py can break if __init__.py imports any external</span>
+<span class="c"># dependencies, as these might not be installed when setup.py runs. In this</span>
+<span class="c"># case __version__ could be moved to a separate version.py and imported here.</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s">&#39;0.5.1-SNAPSHOT&#39;</span>
+
+<div class="viewcode-block" id="MainParams"><a class="viewcode-back" href="../bitcoin.html#bitcoin.MainParams">[docs]</a><span class="k">class</span> <span class="nc">MainParams</span><span class="p">(</span><span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">CoreMainParams</span><span class="p">):</span>
+    <span class="n">MESSAGE_START</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\xf9\xbe\xb4\xd9</span><span class="s">&#39;</span>
+    <span class="n">DEFAULT_PORT</span> <span class="o">=</span> <span class="mi">8333</span>
+    <span class="n">RPC_PORT</span> <span class="o">=</span> <span class="mi">8332</span>
+    <span class="n">DNS_SEEDS</span> <span class="o">=</span> <span class="p">((</span><span class="s">&#39;bitcoin.sipa.be&#39;</span><span class="p">,</span> <span class="s">&#39;seed.bitcoin.sipa.be&#39;</span><span class="p">),</span>
+                 <span class="p">(</span><span class="s">&#39;bluematt.me&#39;</span><span class="p">,</span> <span class="s">&#39;dnsseed.bluematt.me&#39;</span><span class="p">),</span>
+                 <span class="p">(</span><span class="s">&#39;dashjr.org&#39;</span><span class="p">,</span> <span class="s">&#39;dnsseed.bitcoin.dashjr.org&#39;</span><span class="p">),</span>
+                 <span class="p">(</span><span class="s">&#39;bitcoinstats.com&#39;</span><span class="p">,</span> <span class="s">&#39;seed.bitcoinstats.com&#39;</span><span class="p">),</span>
+                 <span class="p">(</span><span class="s">&#39;xf2.org&#39;</span><span class="p">,</span> <span class="s">&#39;bitseed.xf2.org&#39;</span><span class="p">))</span>
+    <span class="n">BASE58_PREFIXES</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;PUBKEY_ADDR&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
+                       <span class="s">&#39;SCRIPT_ADDR&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span>
+                       <span class="s">&#39;SECRET_KEY&#39;</span> <span class="p">:</span><span class="mi">128</span><span class="p">}</span>
+</div>
+<div class="viewcode-block" id="TestNetParams"><a class="viewcode-back" href="../bitcoin.html#bitcoin.TestNetParams">[docs]</a><span class="k">class</span> <span class="nc">TestNetParams</span><span class="p">(</span><span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">CoreTestNetParams</span><span class="p">):</span>
+    <span class="n">MESSAGE_START</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\x0b\x11\x09\x07</span><span class="s">&#39;</span>
+    <span class="n">DEFAULT_PORT</span> <span class="o">=</span> <span class="mi">18333</span>
+    <span class="n">RPC_PORT</span> <span class="o">=</span> <span class="mi">18332</span>
+    <span class="n">DNS_SEEDS</span> <span class="o">=</span> <span class="p">((</span><span class="s">&#39;bitcoin.petertodd.org&#39;</span><span class="p">,</span> <span class="s">&#39;testnet-seed.bitcoin.petertodd.org&#39;</span><span class="p">),</span>
+                 <span class="p">(</span><span class="s">&#39;bluematt.me&#39;</span><span class="p">,</span> <span class="s">&#39;testnet-seed.bluematt.me&#39;</span><span class="p">))</span>
+    <span class="n">BASE58_PREFIXES</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;PUBKEY_ADDR&#39;</span><span class="p">:</span><span class="mi">111</span><span class="p">,</span>
+                       <span class="s">&#39;SCRIPT_ADDR&#39;</span><span class="p">:</span><span class="mi">196</span><span class="p">,</span>
+                       <span class="s">&#39;SECRET_KEY&#39;</span> <span class="p">:</span><span class="mi">239</span><span class="p">}</span>
+</div>
+<div class="viewcode-block" id="RegTestParams"><a class="viewcode-back" href="../bitcoin.html#bitcoin.RegTestParams">[docs]</a><span class="k">class</span> <span class="nc">RegTestParams</span><span class="p">(</span><span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">CoreRegTestParams</span><span class="p">):</span>
+    <span class="n">MESSAGE_START</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\xfa\xbf\xb5\xda</span><span class="s">&#39;</span>
+    <span class="n">DEFAULT_PORT</span> <span class="o">=</span> <span class="mi">18444</span>
+    <span class="n">RPC_PORT</span> <span class="o">=</span> <span class="mi">18332</span>
+    <span class="n">DNS_SEEDS</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">BASE58_PREFIXES</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;PUBKEY_ADDR&#39;</span><span class="p">:</span><span class="mi">111</span><span class="p">,</span>
+                       <span class="s">&#39;SCRIPT_ADDR&#39;</span><span class="p">:</span><span class="mi">196</span><span class="p">,</span>
+                       <span class="s">&#39;SECRET_KEY&#39;</span> <span class="p">:</span><span class="mi">239</span><span class="p">}</span>
+</div>
+<span class="sd">&quot;&quot;&quot;Master global setting for what chain params we&#39;re using.</span>
+
+<span class="sd">However, don&#39;t set this directly, use SelectParams() instead so as to set the</span>
+<span class="sd">bitcoin.core.params correctly too.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c">#params = bitcoin.core.coreparams = MainParams()</span>
+<span class="n">params</span> <span class="o">=</span> <span class="n">MainParams</span><span class="p">()</span>
+
+<div class="viewcode-block" id="SelectParams"><a class="viewcode-back" href="../bitcoin.html#bitcoin.SelectParams">[docs]</a><span class="k">def</span> <span class="nf">SelectParams</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Select the chain parameters to use</span>
+
+<span class="sd">    name is one of &#39;mainnet&#39;, &#39;testnet&#39;, or &#39;regtest&#39;</span>
+
+<span class="sd">    Default chain is &#39;mainnet&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">params</span>
+    <span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">_SelectCoreParams</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;mainnet&#39;</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">coreparams</span> <span class="o">=</span> <span class="n">MainParams</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;testnet&#39;</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">coreparams</span> <span class="o">=</span> <span class="n">TestNetParams</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;regtest&#39;</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">coreparams</span> <span class="o">=</span> <span class="n">RegTestParams</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Unknown chain </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2012-2015, The python-bitcoinlib developers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

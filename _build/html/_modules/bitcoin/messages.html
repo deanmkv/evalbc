@@ -1,0 +1,614 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>bitcoin.messages &mdash; python-bitcoinlib 0.5.1-SNAPSHOT documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.5.1-SNAPSHOT',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="python-bitcoinlib 0.5.1-SNAPSHOT documentation" href="../../index.html" />
+    <link rel="up" title="bitcoin" href="../bitcoin.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../bitcoin.html" accesskey="U">bitcoin</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bitcoin.messages</h1><div class="highlight"><pre>
+<span class="c"># Copyright (C) 2012-2015 The python-bitcoinlib developers</span>
+<span class="c">#</span>
+<span class="c"># This file is part of python-bitcoinlib.</span>
+<span class="c">#</span>
+<span class="c"># It is subject to the license terms in the LICENSE file found in the top-level</span>
+<span class="c"># directory of this distribution.</span>
+<span class="c">#</span>
+<span class="c"># No part of python-bitcoinlib, including this file, may be copied, modified,</span>
+<span class="c"># propagated, or distributed except according to the terms contained in the</span>
+<span class="c"># LICENSE file.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="c"># Py3 compatibility</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;</span> <span class="s">&#39;3&#39;</span><span class="p">:</span>
+    <span class="n">_bchr</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">x</span><span class="p">])</span>
+    <span class="n">_bord</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span> <span class="k">as</span> <span class="n">_BytesIO</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">_bchr</span> <span class="o">=</span> <span class="nb">chr</span>
+    <span class="n">_bord</span> <span class="o">=</span> <span class="nb">ord</span>
+    <span class="kn">from</span> <span class="nn">cStringIO</span> <span class="kn">import</span> <span class="n">StringIO</span> <span class="k">as</span> <span class="n">_BytesIO</span>
+
+<span class="c"># Bad practice, so we have a __all__ at the end; this should be cleaned up</span>
+<span class="c"># later.</span>
+<span class="kn">from</span> <span class="nn">bitcoin.core</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">bitcoin.core.serialize</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">bitcoin.net</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">bitcoin</span>
+
+<span class="n">MSG_TX</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">MSG_BLOCK</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">MSG_FILTERED_BLOCK</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<div class="viewcode-block" id="MsgSerializable"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.MsgSerializable">[docs]</a><span class="k">class</span> <span class="nc">MsgSerializable</span><span class="p">(</span><span class="n">Serializable</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protover</span> <span class="o">=</span> <span class="n">protover</span>
+
+<div class="viewcode-block" id="MsgSerializable.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.MsgSerializable.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="MsgSerializable.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.MsgSerializable.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+<div class="viewcode-block" id="MsgSerializable.to_bytes"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.MsgSerializable.to_bytes">[docs]</a>    <span class="k">def</span> <span class="nf">to_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">_BytesIO</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msg_ser</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">MESSAGE_START</span>
+        <span class="n">res</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span>
+        <span class="n">res</span> <span class="o">+=</span> <span class="n">b</span><span class="s">&quot;</span><span class="se">\x00</span><span class="s">&quot;</span> <span class="o">*</span> <span class="p">(</span><span class="mi">12</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">))</span>
+        <span class="n">res</span> <span class="o">+=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">body</span><span class="p">))</span>
+
+        <span class="c"># add checksum</span>
+        <span class="n">th</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">body</span><span class="p">)</span><span class="o">.</span><span class="n">digest</span><span class="p">()</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">th</span><span class="p">)</span><span class="o">.</span><span class="n">digest</span><span class="p">()</span>
+        <span class="n">res</span> <span class="o">+=</span> <span class="n">h</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span>
+
+        <span class="n">res</span> <span class="o">+=</span> <span class="n">body</span>
+        <span class="k">return</span> <span class="n">res</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="MsgSerializable.from_bytes"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.MsgSerializable.from_bytes">[docs]</a>    <span class="k">def</span> <span class="nf">from_bytes</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">_BytesIO</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">MsgSerializable</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">protover</span><span class="p">)</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="MsgSerializable.stream_deserialize"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.MsgSerializable.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">recvbuf</span> <span class="o">=</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">4</span> <span class="o">+</span> <span class="mi">12</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">+</span> <span class="mi">4</span><span class="p">)</span>
+
+        <span class="c"># check magic</span>
+        <span class="k">if</span> <span class="n">recvbuf</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">!=</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">MESSAGE_START</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Invalid message start &#39;</span><span class="si">%s</span><span class="s">&#39;, expected &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span>
+                             <span class="p">(</span><span class="n">b2x</span><span class="p">(</span><span class="n">recvbuf</span><span class="p">[:</span><span class="mi">4</span><span class="p">]),</span> <span class="n">b2x</span><span class="p">(</span><span class="n">bitcoin</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">MESSAGE_START</span><span class="p">)))</span>
+
+        <span class="c"># remaining header fields: command, msg length, checksum</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">recvbuf</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">4</span><span class="o">+</span><span class="mi">12</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;</span><span class="se">\x00</span><span class="s">&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">msglen</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;i&quot;</span><span class="p">,</span> <span class="n">recvbuf</span><span class="p">[</span><span class="mi">4</span><span class="o">+</span><span class="mi">12</span><span class="p">:</span><span class="mi">4</span><span class="o">+</span><span class="mi">12</span><span class="o">+</span><span class="mi">4</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">checksum</span> <span class="o">=</span> <span class="n">recvbuf</span><span class="p">[</span><span class="mi">4</span><span class="o">+</span><span class="mi">12</span><span class="o">+</span><span class="mi">4</span><span class="p">:</span><span class="mi">4</span><span class="o">+</span><span class="mi">12</span><span class="o">+</span><span class="mi">4</span><span class="o">+</span><span class="mi">4</span><span class="p">]</span>
+
+        <span class="c"># read message body</span>
+        <span class="n">recvbuf</span> <span class="o">+=</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">msglen</span><span class="p">)</span>
+
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">recvbuf</span><span class="p">[</span><span class="mi">4</span><span class="o">+</span><span class="mi">12</span><span class="o">+</span><span class="mi">4</span><span class="o">+</span><span class="mi">4</span><span class="p">:</span><span class="mi">4</span><span class="o">+</span><span class="mi">12</span><span class="o">+</span><span class="mi">4</span><span class="o">+</span><span class="mi">4</span><span class="o">+</span><span class="n">msglen</span><span class="p">]</span>
+        <span class="n">th</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span><span class="o">.</span><span class="n">digest</span><span class="p">()</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">th</span><span class="p">)</span><span class="o">.</span><span class="n">digest</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">checksum</span> <span class="o">!=</span> <span class="n">h</span><span class="p">[:</span><span class="mi">4</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;got bad checksum </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">repr</span><span class="p">(</span><span class="n">recvbuf</span><span class="p">))</span>
+            <span class="n">recvbuf</span> <span class="o">=</span> <span class="n">recvbuf</span><span class="p">[</span><span class="mi">4</span><span class="o">+</span><span class="mi">12</span><span class="o">+</span><span class="mi">4</span><span class="o">+</span><span class="mi">4</span><span class="o">+</span><span class="n">msglen</span><span class="p">:]</span>
+
+        <span class="k">if</span> <span class="n">command</span> <span class="ow">in</span> <span class="n">messagemap</span><span class="p">:</span>
+            <span class="n">cls</span> <span class="o">=</span> <span class="n">messagemap</span><span class="p">[</span><span class="n">command</span><span class="p">]</span>
+            <span class="c">#        print(&quot;Going to deserialize &#39;%s&#39;&quot; % msg)</span>
+            <span class="k">return</span> <span class="n">cls</span><span class="o">.</span><span class="n">msg_deser</span><span class="p">(</span><span class="n">_BytesIO</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Command &#39;</span><span class="si">%s</span><span class="s">&#39; not in messagemap&quot;</span> <span class="o">%</span> <span class="nb">repr</span><span class="p">(</span><span class="n">command</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="MsgSerializable.stream_serialize"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.MsgSerializable.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">()</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="msg_version"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_version">[docs]</a><span class="k">class</span> <span class="nc">msg_version</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;version&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_version</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nVersion</span> <span class="o">=</span> <span class="n">protover</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nServices</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nTime</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addrTo</span> <span class="o">=</span> <span class="n">CAddress</span><span class="p">(</span><span class="n">PROTO_VERSION</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addrFrom</span> <span class="o">=</span> <span class="n">CAddress</span><span class="p">(</span><span class="n">PROTO_VERSION</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nNonce</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">getrandbits</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strSubVer</span> <span class="o">=</span> <span class="p">(</span><span class="n">b</span><span class="s">&#39;/python-bitcoinlib:&#39;</span> <span class="o">+</span>
+                          <span class="n">bitcoin</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;ascii&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nStartingHeight</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="msg_version.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_version.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">nVersion</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;i&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">nVersion</span> <span class="o">==</span> <span class="mi">10300</span><span class="p">:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">nVersion</span> <span class="o">=</span> <span class="mi">300</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">nServices</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;Q&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">8</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">nTime</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;q&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">8</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">addrTo</span> <span class="o">=</span> <span class="n">CAddress</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">nVersion</span> <span class="o">&gt;=</span> <span class="mi">106</span><span class="p">:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">addrFrom</span> <span class="o">=</span> <span class="n">CAddress</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">nNonce</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;Q&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">8</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">strSubVer</span> <span class="o">=</span> <span class="n">VarStringSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">nVersion</span> <span class="o">&gt;=</span> <span class="mi">209</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">nStartingHeight</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;i&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">nStartingHeight</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">addrFrom</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">nNonce</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">strSubVer</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">nStartingHeight</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">return</span> <span class="n">c</span>
+ </div>
+<div class="viewcode-block" id="msg_version.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_version.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;i&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nVersion</span><span class="p">))</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;Q&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nServices</span><span class="p">))</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;q&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nTime</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addrTo</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addrFrom</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;Q&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nNonce</span><span class="p">))</span>
+        <span class="n">VarStringSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strSubVer</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;i&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nStartingHeight</span><span class="p">))</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_version(nVersion=</span><span class="si">%i</span><span class="s"> nServices=</span><span class="si">%i</span><span class="s"> nTime=</span><span class="si">%s</span><span class="s"> addrTo=</span><span class="si">%s</span><span class="s"> addrFrom=</span><span class="si">%s</span><span class="s"> nNonce=0x</span><span class="si">%016X</span><span class="s"> strSubVer=</span><span class="si">%s</span><span class="s"> nStartingHeight=</span><span class="si">%i</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nVersion</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nServices</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">ctime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nTime</span><span class="p">),</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">addrTo</span><span class="p">),</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">addrFrom</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">nNonce</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">strSubVer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nStartingHeight</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="msg_verack"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_verack">[docs]</a><span class="k">class</span> <span class="nc">msg_verack</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;verack&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_verack</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protover</span> <span class="o">=</span> <span class="n">protover</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="msg_verack.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_verack.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="msg_verack.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_verack.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_verack()&quot;</span>
+
+</div>
+<div class="viewcode-block" id="msg_addr"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_addr">[docs]</a><span class="k">class</span> <span class="nc">msg_addr</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;addr&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_addr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addrs</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="msg_addr.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_addr.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">addrs</span> <span class="o">=</span> <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">CAddress</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span>
+</div>
+<div class="viewcode-block" id="msg_addr.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_addr.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">CAddress</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">addrs</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_addr(addrs=</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">addrs</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="msg_alert"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_alert">[docs]</a><span class="k">class</span> <span class="nc">msg_alert</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;alert&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_alert</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alert</span> <span class="o">=</span> <span class="n">CAlert</span><span class="p">()</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="msg_alert.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_alert.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">alert</span> <span class="o">=</span> <span class="n">CAlert</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span>
+</div>
+<div class="viewcode-block" id="msg_alert.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_alert.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alert</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_alert(alert=</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alert</span><span class="p">),</span> <span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="msg_inv"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_inv">[docs]</a><span class="k">class</span> <span class="nc">msg_inv</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;inv&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_inv</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inv</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="msg_inv.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_inv.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">inv</span> <span class="o">=</span> <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">CInv</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span>
+</div>
+<div class="viewcode-block" id="msg_inv.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_inv.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">CInv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inv</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_inv(inv=</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inv</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="msg_getdata"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_getdata">[docs]</a><span class="k">class</span> <span class="nc">msg_getdata</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;getdata&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_getdata</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inv</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="msg_getdata.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_getdata.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">inv</span> <span class="o">=</span> <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">CInv</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span>
+</div>
+<div class="viewcode-block" id="msg_getdata.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_getdata.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">CInv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inv</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_getdata(inv=</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inv</span><span class="p">))</span>
+</div>
+<span class="k">class</span> <span class="nc">msg_notfound</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;notfound&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_notfound</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inv</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">inv</span> <span class="o">=</span> <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">CInv</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span>
+
+    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">CInv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inv</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_notfound(inv=</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inv</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="msg_getblocks"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_getblocks">[docs]</a><span class="k">class</span> <span class="nc">msg_getblocks</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;getblocks&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_getblocks</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locator</span> <span class="o">=</span> <span class="n">CBlockLocator</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hashstop</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\x00</span><span class="s">&#39;</span><span class="o">*</span><span class="mi">32</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="msg_getblocks.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_getblocks.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">locator</span> <span class="o">=</span> <span class="n">CBlockLocator</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">hashstop</span> <span class="o">=</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span>
+</div>
+<div class="viewcode-block" id="msg_getblocks.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_getblocks.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locator</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hashstop</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_getblocks(locator=</span><span class="si">%s</span><span class="s"> hashstop=</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">locator</span><span class="p">),</span> <span class="n">b2x</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hashstop</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="msg_getheaders"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_getheaders">[docs]</a><span class="k">class</span> <span class="nc">msg_getheaders</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;getheaders&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_getheaders</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locator</span> <span class="o">=</span> <span class="n">CBlockLocator</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hashstop</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\x00</span><span class="s">&#39;</span><span class="o">*</span><span class="mi">32</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="msg_getheaders.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_getheaders.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">locator</span> <span class="o">=</span> <span class="n">CBlockLocator</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">hashstop</span> <span class="o">=</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span>
+</div>
+<div class="viewcode-block" id="msg_getheaders.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_getheaders.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locator</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hashstop</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_getheaders(locator=</span><span class="si">%s</span><span class="s"> hashstop=</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">locator</span><span class="p">),</span> <span class="n">b2x</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hashstop</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="msg_headers"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_headers">[docs]</a><span class="k">class</span> <span class="nc">msg_headers</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;headers&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_headers</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="msg_headers.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_headers.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">CBlock</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span>
+</div>
+<div class="viewcode-block" id="msg_headers.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_headers.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">CBlock</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_headers(headers=</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="msg_tx"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_tx">[docs]</a><span class="k">class</span> <span class="nc">msg_tx</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;tx&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_tx</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tx</span> <span class="o">=</span> <span class="n">CTransaction</span><span class="p">()</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="msg_tx.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_tx.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">tx</span> <span class="o">=</span> <span class="n">CTransaction</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span>
+</div>
+<div class="viewcode-block" id="msg_tx.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_tx.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_tx(tx=</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tx</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="msg_block"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_block">[docs]</a><span class="k">class</span> <span class="nc">msg_block</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;block&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_block</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block</span> <span class="o">=</span> <span class="n">CBlock</span><span class="p">()</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="msg_block.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_block.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">block</span> <span class="o">=</span> <span class="n">CBlock</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span>
+</div>
+<div class="viewcode-block" id="msg_block.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_block.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_block(block=</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">block</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="msg_getaddr"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_getaddr">[docs]</a><span class="k">class</span> <span class="nc">msg_getaddr</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;getaddr&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_getaddr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="msg_getaddr.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_getaddr.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="msg_getaddr.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_getaddr.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">pass</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_getaddr()&quot;</span>
+
+</div>
+<div class="viewcode-block" id="msg_ping"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_ping">[docs]</a><span class="k">class</span> <span class="nc">msg_ping</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;ping&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">,</span> <span class="n">nonce</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_ping</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nonce</span> <span class="o">=</span> <span class="n">nonce</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="msg_ping.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_ping.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">nonce</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;Q&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">8</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">c</span>
+</div>
+<div class="viewcode-block" id="msg_ping.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_ping.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;Q&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonce</span><span class="p">))</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_ping(0x</span><span class="si">%x</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nonce</span><span class="p">,)</span>
+
+</div>
+<div class="viewcode-block" id="msg_pong"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_pong">[docs]</a><span class="k">class</span> <span class="nc">msg_pong</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;pong&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">,</span> <span class="n">nonce</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_pong</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nonce</span> <span class="o">=</span> <span class="n">nonce</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="msg_pong.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_pong.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">nonce</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;Q&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">8</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">c</span>
+</div>
+<div class="viewcode-block" id="msg_pong.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_pong.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;Q&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonce</span><span class="p">))</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_pong(0x</span><span class="si">%x</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nonce</span><span class="p">,)</span>
+
+</div>
+<span class="k">class</span> <span class="nc">msg_reject</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;reject&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_reject</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;(Message Unitialized)&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ccode</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;(Reason Unitialized)&#39;</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">VarStringSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">ccode</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;c&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">1</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">VarStringSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span>
+
+    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">VarStringSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;c&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ccode</span><span class="p">))</span>
+        <span class="n">VarStringSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_reject(messsage=</span><span class="si">%s</span><span class="s">, ccode=</span><span class="si">%s</span><span class="s">, reason=</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ccode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="msg_mempool"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_mempool">[docs]</a><span class="k">class</span> <span class="nc">msg_mempool</span><span class="p">(</span><span class="n">MsgSerializable</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;mempool&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">msg_mempool</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">protover</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="msg_mempool.msg_deser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_mempool.msg_deser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_deser</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protover</span><span class="o">=</span><span class="n">PROTO_VERSION</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="msg_mempool.msg_ser"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.messages.msg_mempool.msg_ser">[docs]</a>    <span class="k">def</span> <span class="nf">msg_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">pass</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;msg_mempool()&quot;</span>
+</div>
+<span class="n">msg_classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">msg_version</span><span class="p">,</span> <span class="n">msg_verack</span><span class="p">,</span> <span class="n">msg_addr</span><span class="p">,</span> <span class="n">msg_alert</span><span class="p">,</span> <span class="n">msg_inv</span><span class="p">,</span>
+               <span class="n">msg_getdata</span><span class="p">,</span> <span class="n">msg_notfound</span><span class="p">,</span> <span class="n">msg_getblocks</span><span class="p">,</span> <span class="n">msg_getheaders</span><span class="p">,</span>
+               <span class="n">msg_headers</span><span class="p">,</span> <span class="n">msg_tx</span><span class="p">,</span> <span class="n">msg_block</span><span class="p">,</span> <span class="n">msg_getaddr</span><span class="p">,</span> <span class="n">msg_ping</span><span class="p">,</span>
+               <span class="n">msg_pong</span><span class="p">,</span> <span class="n">msg_reject</span><span class="p">,</span> <span class="n">msg_mempool</span><span class="p">]</span>
+
+<span class="n">messagemap</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">cls</span> <span class="ow">in</span> <span class="n">msg_classes</span><span class="p">:</span>
+    <span class="n">messagemap</span><span class="p">[</span><span class="n">cls</span><span class="o">.</span><span class="n">command</span><span class="p">]</span> <span class="o">=</span> <span class="n">cls</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s">&#39;MSG_TX&#39;</span><span class="p">,</span>
+        <span class="s">&#39;MSG_BLOCK&#39;</span><span class="p">,</span>
+        <span class="s">&#39;MSG_FILTERED_BLOCK&#39;</span><span class="p">,</span>
+        <span class="s">&#39;MsgSerializable&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_version&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_verack&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_addr&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_alert&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_inv&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_getdata&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_getblocks&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_getheaders&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_headers&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_tx&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_block&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_getaddr&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_ping&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_pong&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_mempool&#39;</span><span class="p">,</span>
+        <span class="s">&#39;msg_classes&#39;</span><span class="p">,</span>
+        <span class="s">&#39;messagemap&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../bitcoin.html" >bitcoin</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2012-2015, The python-bitcoinlib developers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

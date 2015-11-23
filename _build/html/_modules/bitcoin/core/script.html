@@ -1,0 +1,1160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>bitcoin.core.script &mdash; python-bitcoinlib 0.5.1-SNAPSHOT documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.5.1-SNAPSHOT',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="python-bitcoinlib 0.5.1-SNAPSHOT documentation" href="../../../index.html" />
+    <link rel="up" title="bitcoin.core" href="../core.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../../bitcoin.html" >bitcoin</a> &raquo;</li>
+          <li class="nav-item nav-item-3"><a href="../core.html" accesskey="U">bitcoin.core</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bitcoin.core.script</h1><div class="highlight"><pre>
+<span class="c"># Copyright (C) 2012-2015 The python-bitcoinlib developers</span>
+<span class="c">#</span>
+<span class="c"># This file is part of python-bitcoinlib.</span>
+<span class="c">#</span>
+<span class="c"># It is subject to the license terms in the LICENSE file found in the top-level</span>
+<span class="c"># directory of this distribution.</span>
+<span class="c">#</span>
+<span class="c"># No part of python-bitcoinlib, including this file, may be copied, modified,</span>
+<span class="c"># propagated, or distributed except according to the terms contained in the</span>
+<span class="c"># LICENSE file.</span>
+
+<span class="sd">&quot;&quot;&quot;Scripts</span>
+
+<span class="sd">Functionality to build scripts, as well as SignatureHash(). Script evaluation</span>
+<span class="sd">is in bitcoin.core.scripteval</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">_bchr</span> <span class="o">=</span> <span class="nb">chr</span>
+<span class="n">_bord</span> <span class="o">=</span> <span class="nb">ord</span>
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;</span> <span class="s">&#39;3&#39;</span><span class="p">:</span>
+    <span class="nb">long</span> <span class="o">=</span> <span class="nb">int</span>
+    <span class="n">_bchr</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">x</span><span class="p">])</span>
+    <span class="n">_bord</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+
+<span class="kn">import</span> <span class="nn">array</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+
+<span class="kn">import</span> <span class="nn">bitcoin.core</span>
+<span class="kn">import</span> <span class="nn">bitcoin.core._bignum</span>
+
+<span class="n">MAX_SCRIPT_SIZE</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="n">MAX_SCRIPT_ELEMENT_SIZE</span> <span class="o">=</span> <span class="mi">520</span>
+<span class="n">MAX_SCRIPT_OPCODES</span> <span class="o">=</span> <span class="mi">201</span>
+
+<span class="n">OPCODE_NAMES</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">_opcode_instances</span> <span class="o">=</span> <span class="p">[]</span>
+<div class="viewcode-block" id="CScriptOp"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScriptOp">[docs]</a><span class="k">class</span> <span class="nc">CScriptOp</span><span class="p">(</span><span class="nb">int</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A single script opcode&quot;&quot;&quot;</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="CScriptOp.encode_op_pushdata"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScriptOp.encode_op_pushdata">[docs]</a>    <span class="k">def</span> <span class="nf">encode_op_pushdata</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Encode a PUSHDATA op, returning bytes&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mh">0x4c</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">b</span><span class="s">&#39;&#39;</span> <span class="o">+</span> <span class="n">_bchr</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">))</span> <span class="o">+</span> <span class="n">d</span> <span class="c"># OP_PUSHDATA</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mh">0xff</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\x4c</span><span class="s">&#39;</span> <span class="o">+</span> <span class="n">_bchr</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">))</span> <span class="o">+</span> <span class="n">d</span> <span class="c"># OP_PUSHDATA1</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mh">0xffff</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\x4d</span><span class="s">&#39;</span> <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;&lt;H&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">))</span> <span class="o">+</span> <span class="n">d</span> <span class="c"># OP_PUSHDATA2</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mh">0xffffffff</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\x4e</span><span class="s">&#39;</span> <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;&lt;I&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">))</span> <span class="o">+</span> <span class="n">d</span> <span class="c"># OP_PUSHDATA4</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Data too long to encode in a PUSHDATA op&quot;</span><span class="p">)</span>
+</div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="CScriptOp.encode_op_n"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScriptOp.encode_op_n">[docs]</a>    <span class="k">def</span> <span class="nf">encode_op_n</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Encode a small integer op, returning an opcode&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="mi">16</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Integer must be in range 0 &lt;= n &lt;= 16, got </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">OP_0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="n">OP_1</span> <span class="o">+</span> <span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CScriptOp.decode_op_n"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScriptOp.decode_op_n">[docs]</a>    <span class="k">def</span> <span class="nf">decode_op_n</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Decode a small integer opcode, returning an integer&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">OP_0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">OP_0</span> <span class="ow">or</span> <span class="n">OP_1</span> <span class="o">&lt;=</span> <span class="bp">self</span> <span class="o">&lt;=</span> <span class="n">OP_16</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;op </span><span class="si">%r</span><span class="s"> is not an OP_N&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span> <span class="o">-</span> <span class="n">OP_1</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CScriptOp.is_small_int"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScriptOp.is_small_int">[docs]</a>    <span class="k">def</span> <span class="nf">is_small_int</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return true if the op pushes a small integer to the stack&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="mh">0x51</span> <span class="o">&lt;=</span> <span class="bp">self</span> <span class="o">&lt;=</span> <span class="mh">0x60</span> <span class="ow">or</span> <span class="bp">self</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+</div>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span> <span class="ow">in</span> <span class="n">OPCODE_NAMES</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">OPCODE_NAMES</span><span class="p">[</span><span class="bp">self</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;CScriptOp(0x</span><span class="si">%x</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_opcode_instances</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">_opcode_instances</span><span class="p">)</span> <span class="o">==</span> <span class="n">n</span>
+            <span class="n">_opcode_instances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">super</span><span class="p">(</span><span class="n">CScriptOp</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">_opcode_instances</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+
+<span class="c"># Populate opcode instance table</span></div>
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mh">0xff</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">CScriptOp</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+
+<span class="c"># push value</span>
+<span class="n">OP_0</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x00</span><span class="p">)</span>
+<span class="n">OP_FALSE</span> <span class="o">=</span> <span class="n">OP_0</span>
+<span class="n">OP_PUSHDATA1</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x4c</span><span class="p">)</span>
+<span class="n">OP_PUSHDATA2</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x4d</span><span class="p">)</span>
+<span class="n">OP_PUSHDATA4</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x4e</span><span class="p">)</span>
+<span class="n">OP_1NEGATE</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x4f</span><span class="p">)</span>
+<span class="n">OP_RESERVED</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x50</span><span class="p">)</span>
+<span class="n">OP_1</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x51</span><span class="p">)</span>
+<span class="n">OP_TRUE</span> <span class="o">=</span> <span class="n">OP_1</span>
+<span class="n">OP_2</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x52</span><span class="p">)</span>
+<span class="n">OP_3</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x53</span><span class="p">)</span>
+<span class="n">OP_4</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x54</span><span class="p">)</span>
+<span class="n">OP_5</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x55</span><span class="p">)</span>
+<span class="n">OP_6</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x56</span><span class="p">)</span>
+<span class="n">OP_7</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x57</span><span class="p">)</span>
+<span class="n">OP_8</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x58</span><span class="p">)</span>
+<span class="n">OP_9</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x59</span><span class="p">)</span>
+<span class="n">OP_10</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x5a</span><span class="p">)</span>
+<span class="n">OP_11</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x5b</span><span class="p">)</span>
+<span class="n">OP_12</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x5c</span><span class="p">)</span>
+<span class="n">OP_13</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x5d</span><span class="p">)</span>
+<span class="n">OP_14</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x5e</span><span class="p">)</span>
+<span class="n">OP_15</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x5f</span><span class="p">)</span>
+<span class="n">OP_16</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x60</span><span class="p">)</span>
+
+<span class="c"># control</span>
+<span class="n">OP_NOP</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x61</span><span class="p">)</span>
+<span class="n">OP_VER</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x62</span><span class="p">)</span>
+<span class="n">OP_IF</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x63</span><span class="p">)</span>
+<span class="n">OP_NOTIF</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x64</span><span class="p">)</span>
+<span class="n">OP_VERIF</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x65</span><span class="p">)</span>
+<span class="n">OP_VERNOTIF</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x66</span><span class="p">)</span>
+<span class="n">OP_ELSE</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x67</span><span class="p">)</span>
+<span class="n">OP_ENDIF</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x68</span><span class="p">)</span>
+<span class="n">OP_VERIFY</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x69</span><span class="p">)</span>
+<span class="n">OP_RETURN</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x6a</span><span class="p">)</span>
+
+<span class="c"># stack ops</span>
+<span class="n">OP_TOALTSTACK</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x6b</span><span class="p">)</span>
+<span class="n">OP_FROMALTSTACK</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x6c</span><span class="p">)</span>
+<span class="n">OP_2DROP</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x6d</span><span class="p">)</span>
+<span class="n">OP_2DUP</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x6e</span><span class="p">)</span>
+<span class="n">OP_3DUP</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x6f</span><span class="p">)</span>
+<span class="n">OP_2OVER</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x70</span><span class="p">)</span>
+<span class="n">OP_2ROT</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x71</span><span class="p">)</span>
+<span class="n">OP_2SWAP</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x72</span><span class="p">)</span>
+<span class="n">OP_IFDUP</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x73</span><span class="p">)</span>
+<span class="n">OP_DEPTH</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x74</span><span class="p">)</span>
+<span class="n">OP_DROP</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x75</span><span class="p">)</span>
+<span class="n">OP_DUP</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x76</span><span class="p">)</span>
+<span class="n">OP_NIP</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x77</span><span class="p">)</span>
+<span class="n">OP_OVER</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x78</span><span class="p">)</span>
+<span class="n">OP_PICK</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x79</span><span class="p">)</span>
+<span class="n">OP_ROLL</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x7a</span><span class="p">)</span>
+<span class="n">OP_ROT</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x7b</span><span class="p">)</span>
+<span class="n">OP_SWAP</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x7c</span><span class="p">)</span>
+<span class="n">OP_TUCK</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x7d</span><span class="p">)</span>
+
+<span class="c"># splice ops</span>
+<span class="n">OP_CAT</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x7e</span><span class="p">)</span>
+<span class="n">OP_SUBSTR</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x7f</span><span class="p">)</span>
+<span class="n">OP_LEFT</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x80</span><span class="p">)</span>
+<span class="n">OP_RIGHT</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x81</span><span class="p">)</span>
+<span class="n">OP_SIZE</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x82</span><span class="p">)</span>
+
+<span class="c"># bit logic</span>
+<span class="n">OP_INVERT</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x83</span><span class="p">)</span>
+<span class="n">OP_AND</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x84</span><span class="p">)</span>
+<span class="n">OP_OR</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x85</span><span class="p">)</span>
+<span class="n">OP_XOR</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x86</span><span class="p">)</span>
+<span class="n">OP_EQUAL</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x87</span><span class="p">)</span>
+<span class="n">OP_EQUALVERIFY</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x88</span><span class="p">)</span>
+<span class="n">OP_RESERVED1</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x89</span><span class="p">)</span>
+<span class="n">OP_RESERVED2</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x8a</span><span class="p">)</span>
+
+<span class="c"># numeric</span>
+<span class="n">OP_1ADD</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x8b</span><span class="p">)</span>
+<span class="n">OP_1SUB</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x8c</span><span class="p">)</span>
+<span class="n">OP_2MUL</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x8d</span><span class="p">)</span>
+<span class="n">OP_2DIV</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x8e</span><span class="p">)</span>
+<span class="n">OP_NEGATE</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x8f</span><span class="p">)</span>
+<span class="n">OP_ABS</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x90</span><span class="p">)</span>
+<span class="n">OP_NOT</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x91</span><span class="p">)</span>
+<span class="n">OP_0NOTEQUAL</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x92</span><span class="p">)</span>
+
+<span class="n">OP_ADD</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x93</span><span class="p">)</span>
+<span class="n">OP_SUB</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x94</span><span class="p">)</span>
+<span class="n">OP_MUL</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x95</span><span class="p">)</span>
+<span class="n">OP_DIV</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x96</span><span class="p">)</span>
+<span class="n">OP_MOD</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x97</span><span class="p">)</span>
+<span class="n">OP_LSHIFT</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x98</span><span class="p">)</span>
+<span class="n">OP_RSHIFT</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x99</span><span class="p">)</span>
+
+<span class="n">OP_BOOLAND</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x9a</span><span class="p">)</span>
+<span class="n">OP_BOOLOR</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x9b</span><span class="p">)</span>
+<span class="n">OP_NUMEQUAL</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x9c</span><span class="p">)</span>
+<span class="n">OP_NUMEQUALVERIFY</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x9d</span><span class="p">)</span>
+<span class="n">OP_NUMNOTEQUAL</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x9e</span><span class="p">)</span>
+<span class="n">OP_LESSTHAN</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0x9f</span><span class="p">)</span>
+<span class="n">OP_GREATERTHAN</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xa0</span><span class="p">)</span>
+<span class="n">OP_LESSTHANOREQUAL</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xa1</span><span class="p">)</span>
+<span class="n">OP_GREATERTHANOREQUAL</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xa2</span><span class="p">)</span>
+<span class="n">OP_MIN</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xa3</span><span class="p">)</span>
+<span class="n">OP_MAX</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xa4</span><span class="p">)</span>
+
+<span class="n">OP_WITHIN</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xa5</span><span class="p">)</span>
+
+<span class="c"># crypto</span>
+<span class="n">OP_RIPEMD160</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xa6</span><span class="p">)</span>
+<span class="n">OP_SHA1</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xa7</span><span class="p">)</span>
+<span class="n">OP_SHA256</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xa8</span><span class="p">)</span>
+<span class="n">OP_HASH160</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xa9</span><span class="p">)</span>
+<span class="n">OP_HASH256</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xaa</span><span class="p">)</span>
+<span class="n">OP_CODESEPARATOR</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xab</span><span class="p">)</span>
+<span class="n">OP_CHECKSIG</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xac</span><span class="p">)</span>
+<span class="n">OP_CHECKSIGVERIFY</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xad</span><span class="p">)</span>
+<span class="n">OP_CHECKMULTISIG</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xae</span><span class="p">)</span>
+<span class="n">OP_CHECKMULTISIGVERIFY</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xaf</span><span class="p">)</span>
+
+<span class="c"># expansion</span>
+<span class="n">OP_NOP1</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xb0</span><span class="p">)</span>
+<span class="n">OP_NOP2</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xb1</span><span class="p">)</span>
+<span class="n">OP_NOP3</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xb2</span><span class="p">)</span>
+<span class="n">OP_NOP4</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xb3</span><span class="p">)</span>
+<span class="n">OP_NOP5</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xb4</span><span class="p">)</span>
+<span class="n">OP_NOP6</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xb5</span><span class="p">)</span>
+<span class="n">OP_NOP7</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xb6</span><span class="p">)</span>
+<span class="n">OP_NOP8</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xb7</span><span class="p">)</span>
+<span class="n">OP_NOP9</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xb8</span><span class="p">)</span>
+<span class="n">OP_NOP10</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xb9</span><span class="p">)</span>
+
+<span class="c"># template matching params</span>
+<span class="n">OP_SMALLINTEGER</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xfa</span><span class="p">)</span>
+<span class="n">OP_PUBKEYS</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xfb</span><span class="p">)</span>
+<span class="n">OP_PUBKEYHASH</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xfd</span><span class="p">)</span>
+<span class="n">OP_PUBKEY</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xfe</span><span class="p">)</span>
+
+<span class="n">OP_INVALIDOPCODE</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="mh">0xff</span><span class="p">)</span>
+
+<span class="n">OPCODE_NAMES</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+    <span class="n">OP_0</span><span class="p">:</span> <span class="s">&#39;OP_0&#39;</span><span class="p">,</span>
+    <span class="n">OP_PUSHDATA1</span><span class="p">:</span> <span class="s">&#39;OP_PUSHDATA1&#39;</span><span class="p">,</span>
+    <span class="n">OP_PUSHDATA2</span><span class="p">:</span> <span class="s">&#39;OP_PUSHDATA2&#39;</span><span class="p">,</span>
+    <span class="n">OP_PUSHDATA4</span><span class="p">:</span> <span class="s">&#39;OP_PUSHDATA4&#39;</span><span class="p">,</span>
+    <span class="n">OP_1NEGATE</span><span class="p">:</span> <span class="s">&#39;OP_1NEGATE&#39;</span><span class="p">,</span>
+    <span class="n">OP_RESERVED</span><span class="p">:</span> <span class="s">&#39;OP_RESERVED&#39;</span><span class="p">,</span>
+    <span class="n">OP_1</span><span class="p">:</span> <span class="s">&#39;OP_1&#39;</span><span class="p">,</span>
+    <span class="n">OP_2</span><span class="p">:</span> <span class="s">&#39;OP_2&#39;</span><span class="p">,</span>
+    <span class="n">OP_3</span><span class="p">:</span> <span class="s">&#39;OP_3&#39;</span><span class="p">,</span>
+    <span class="n">OP_4</span><span class="p">:</span> <span class="s">&#39;OP_4&#39;</span><span class="p">,</span>
+    <span class="n">OP_5</span><span class="p">:</span> <span class="s">&#39;OP_5&#39;</span><span class="p">,</span>
+    <span class="n">OP_6</span><span class="p">:</span> <span class="s">&#39;OP_6&#39;</span><span class="p">,</span>
+    <span class="n">OP_7</span><span class="p">:</span> <span class="s">&#39;OP_7&#39;</span><span class="p">,</span>
+    <span class="n">OP_8</span><span class="p">:</span> <span class="s">&#39;OP_8&#39;</span><span class="p">,</span>
+    <span class="n">OP_9</span><span class="p">:</span> <span class="s">&#39;OP_9&#39;</span><span class="p">,</span>
+    <span class="n">OP_10</span><span class="p">:</span> <span class="s">&#39;OP_10&#39;</span><span class="p">,</span>
+    <span class="n">OP_11</span><span class="p">:</span> <span class="s">&#39;OP_11&#39;</span><span class="p">,</span>
+    <span class="n">OP_12</span><span class="p">:</span> <span class="s">&#39;OP_12&#39;</span><span class="p">,</span>
+    <span class="n">OP_13</span><span class="p">:</span> <span class="s">&#39;OP_13&#39;</span><span class="p">,</span>
+    <span class="n">OP_14</span><span class="p">:</span> <span class="s">&#39;OP_14&#39;</span><span class="p">,</span>
+    <span class="n">OP_15</span><span class="p">:</span> <span class="s">&#39;OP_15&#39;</span><span class="p">,</span>
+    <span class="n">OP_16</span><span class="p">:</span> <span class="s">&#39;OP_16&#39;</span><span class="p">,</span>
+    <span class="n">OP_NOP</span><span class="p">:</span> <span class="s">&#39;OP_NOP&#39;</span><span class="p">,</span>
+    <span class="n">OP_VER</span><span class="p">:</span> <span class="s">&#39;OP_VER&#39;</span><span class="p">,</span>
+    <span class="n">OP_IF</span><span class="p">:</span> <span class="s">&#39;OP_IF&#39;</span><span class="p">,</span>
+    <span class="n">OP_NOTIF</span><span class="p">:</span> <span class="s">&#39;OP_NOTIF&#39;</span><span class="p">,</span>
+    <span class="n">OP_VERIF</span><span class="p">:</span> <span class="s">&#39;OP_VERIF&#39;</span><span class="p">,</span>
+    <span class="n">OP_VERNOTIF</span><span class="p">:</span> <span class="s">&#39;OP_VERNOTIF&#39;</span><span class="p">,</span>
+    <span class="n">OP_ELSE</span><span class="p">:</span> <span class="s">&#39;OP_ELSE&#39;</span><span class="p">,</span>
+    <span class="n">OP_ENDIF</span><span class="p">:</span> <span class="s">&#39;OP_ENDIF&#39;</span><span class="p">,</span>
+    <span class="n">OP_VERIFY</span><span class="p">:</span> <span class="s">&#39;OP_VERIFY&#39;</span><span class="p">,</span>
+    <span class="n">OP_RETURN</span><span class="p">:</span> <span class="s">&#39;OP_RETURN&#39;</span><span class="p">,</span>
+    <span class="n">OP_TOALTSTACK</span><span class="p">:</span> <span class="s">&#39;OP_TOALTSTACK&#39;</span><span class="p">,</span>
+    <span class="n">OP_FROMALTSTACK</span><span class="p">:</span> <span class="s">&#39;OP_FROMALTSTACK&#39;</span><span class="p">,</span>
+    <span class="n">OP_2DROP</span><span class="p">:</span> <span class="s">&#39;OP_2DROP&#39;</span><span class="p">,</span>
+    <span class="n">OP_2DUP</span><span class="p">:</span> <span class="s">&#39;OP_2DUP&#39;</span><span class="p">,</span>
+    <span class="n">OP_3DUP</span><span class="p">:</span> <span class="s">&#39;OP_3DUP&#39;</span><span class="p">,</span>
+    <span class="n">OP_2OVER</span><span class="p">:</span> <span class="s">&#39;OP_2OVER&#39;</span><span class="p">,</span>
+    <span class="n">OP_2ROT</span><span class="p">:</span> <span class="s">&#39;OP_2ROT&#39;</span><span class="p">,</span>
+    <span class="n">OP_2SWAP</span><span class="p">:</span> <span class="s">&#39;OP_2SWAP&#39;</span><span class="p">,</span>
+    <span class="n">OP_IFDUP</span><span class="p">:</span> <span class="s">&#39;OP_IFDUP&#39;</span><span class="p">,</span>
+    <span class="n">OP_DEPTH</span><span class="p">:</span> <span class="s">&#39;OP_DEPTH&#39;</span><span class="p">,</span>
+    <span class="n">OP_DROP</span><span class="p">:</span> <span class="s">&#39;OP_DROP&#39;</span><span class="p">,</span>
+    <span class="n">OP_DUP</span><span class="p">:</span> <span class="s">&#39;OP_DUP&#39;</span><span class="p">,</span>
+    <span class="n">OP_NIP</span><span class="p">:</span> <span class="s">&#39;OP_NIP&#39;</span><span class="p">,</span>
+    <span class="n">OP_OVER</span><span class="p">:</span> <span class="s">&#39;OP_OVER&#39;</span><span class="p">,</span>
+    <span class="n">OP_PICK</span><span class="p">:</span> <span class="s">&#39;OP_PICK&#39;</span><span class="p">,</span>
+    <span class="n">OP_ROLL</span><span class="p">:</span> <span class="s">&#39;OP_ROLL&#39;</span><span class="p">,</span>
+    <span class="n">OP_ROT</span><span class="p">:</span> <span class="s">&#39;OP_ROT&#39;</span><span class="p">,</span>
+    <span class="n">OP_SWAP</span><span class="p">:</span> <span class="s">&#39;OP_SWAP&#39;</span><span class="p">,</span>
+    <span class="n">OP_TUCK</span><span class="p">:</span> <span class="s">&#39;OP_TUCK&#39;</span><span class="p">,</span>
+    <span class="n">OP_CAT</span><span class="p">:</span> <span class="s">&#39;OP_CAT&#39;</span><span class="p">,</span>
+    <span class="n">OP_SUBSTR</span><span class="p">:</span> <span class="s">&#39;OP_SUBSTR&#39;</span><span class="p">,</span>
+    <span class="n">OP_LEFT</span><span class="p">:</span> <span class="s">&#39;OP_LEFT&#39;</span><span class="p">,</span>
+    <span class="n">OP_RIGHT</span><span class="p">:</span> <span class="s">&#39;OP_RIGHT&#39;</span><span class="p">,</span>
+    <span class="n">OP_SIZE</span><span class="p">:</span> <span class="s">&#39;OP_SIZE&#39;</span><span class="p">,</span>
+    <span class="n">OP_INVERT</span><span class="p">:</span> <span class="s">&#39;OP_INVERT&#39;</span><span class="p">,</span>
+    <span class="n">OP_AND</span><span class="p">:</span> <span class="s">&#39;OP_AND&#39;</span><span class="p">,</span>
+    <span class="n">OP_OR</span><span class="p">:</span> <span class="s">&#39;OP_OR&#39;</span><span class="p">,</span>
+    <span class="n">OP_XOR</span><span class="p">:</span> <span class="s">&#39;OP_XOR&#39;</span><span class="p">,</span>
+    <span class="n">OP_EQUAL</span><span class="p">:</span> <span class="s">&#39;OP_EQUAL&#39;</span><span class="p">,</span>
+    <span class="n">OP_EQUALVERIFY</span><span class="p">:</span> <span class="s">&#39;OP_EQUALVERIFY&#39;</span><span class="p">,</span>
+    <span class="n">OP_RESERVED1</span><span class="p">:</span> <span class="s">&#39;OP_RESERVED1&#39;</span><span class="p">,</span>
+    <span class="n">OP_RESERVED2</span><span class="p">:</span> <span class="s">&#39;OP_RESERVED2&#39;</span><span class="p">,</span>
+    <span class="n">OP_1ADD</span><span class="p">:</span> <span class="s">&#39;OP_1ADD&#39;</span><span class="p">,</span>
+    <span class="n">OP_1SUB</span><span class="p">:</span> <span class="s">&#39;OP_1SUB&#39;</span><span class="p">,</span>
+    <span class="n">OP_2MUL</span><span class="p">:</span> <span class="s">&#39;OP_2MUL&#39;</span><span class="p">,</span>
+    <span class="n">OP_2DIV</span><span class="p">:</span> <span class="s">&#39;OP_2DIV&#39;</span><span class="p">,</span>
+    <span class="n">OP_NEGATE</span><span class="p">:</span> <span class="s">&#39;OP_NEGATE&#39;</span><span class="p">,</span>
+    <span class="n">OP_ABS</span><span class="p">:</span> <span class="s">&#39;OP_ABS&#39;</span><span class="p">,</span>
+    <span class="n">OP_NOT</span><span class="p">:</span> <span class="s">&#39;OP_NOT&#39;</span><span class="p">,</span>
+    <span class="n">OP_0NOTEQUAL</span><span class="p">:</span> <span class="s">&#39;OP_0NOTEQUAL&#39;</span><span class="p">,</span>
+    <span class="n">OP_ADD</span><span class="p">:</span> <span class="s">&#39;OP_ADD&#39;</span><span class="p">,</span>
+    <span class="n">OP_SUB</span><span class="p">:</span> <span class="s">&#39;OP_SUB&#39;</span><span class="p">,</span>
+    <span class="n">OP_MUL</span><span class="p">:</span> <span class="s">&#39;OP_MUL&#39;</span><span class="p">,</span>
+    <span class="n">OP_DIV</span><span class="p">:</span> <span class="s">&#39;OP_DIV&#39;</span><span class="p">,</span>
+    <span class="n">OP_MOD</span><span class="p">:</span> <span class="s">&#39;OP_MOD&#39;</span><span class="p">,</span>
+    <span class="n">OP_LSHIFT</span><span class="p">:</span> <span class="s">&#39;OP_LSHIFT&#39;</span><span class="p">,</span>
+    <span class="n">OP_RSHIFT</span><span class="p">:</span> <span class="s">&#39;OP_RSHIFT&#39;</span><span class="p">,</span>
+    <span class="n">OP_BOOLAND</span><span class="p">:</span> <span class="s">&#39;OP_BOOLAND&#39;</span><span class="p">,</span>
+    <span class="n">OP_BOOLOR</span><span class="p">:</span> <span class="s">&#39;OP_BOOLOR&#39;</span><span class="p">,</span>
+    <span class="n">OP_NUMEQUAL</span><span class="p">:</span> <span class="s">&#39;OP_NUMEQUAL&#39;</span><span class="p">,</span>
+    <span class="n">OP_NUMEQUALVERIFY</span><span class="p">:</span> <span class="s">&#39;OP_NUMEQUALVERIFY&#39;</span><span class="p">,</span>
+    <span class="n">OP_NUMNOTEQUAL</span><span class="p">:</span> <span class="s">&#39;OP_NUMNOTEQUAL&#39;</span><span class="p">,</span>
+    <span class="n">OP_LESSTHAN</span><span class="p">:</span> <span class="s">&#39;OP_LESSTHAN&#39;</span><span class="p">,</span>
+    <span class="n">OP_GREATERTHAN</span><span class="p">:</span> <span class="s">&#39;OP_GREATERTHAN&#39;</span><span class="p">,</span>
+    <span class="n">OP_LESSTHANOREQUAL</span><span class="p">:</span> <span class="s">&#39;OP_LESSTHANOREQUAL&#39;</span><span class="p">,</span>
+    <span class="n">OP_GREATERTHANOREQUAL</span><span class="p">:</span> <span class="s">&#39;OP_GREATERTHANOREQUAL&#39;</span><span class="p">,</span>
+    <span class="n">OP_MIN</span><span class="p">:</span> <span class="s">&#39;OP_MIN&#39;</span><span class="p">,</span>
+    <span class="n">OP_MAX</span><span class="p">:</span> <span class="s">&#39;OP_MAX&#39;</span><span class="p">,</span>
+    <span class="n">OP_WITHIN</span><span class="p">:</span> <span class="s">&#39;OP_WITHIN&#39;</span><span class="p">,</span>
+    <span class="n">OP_RIPEMD160</span><span class="p">:</span> <span class="s">&#39;OP_RIPEMD160&#39;</span><span class="p">,</span>
+    <span class="n">OP_SHA1</span><span class="p">:</span> <span class="s">&#39;OP_SHA1&#39;</span><span class="p">,</span>
+    <span class="n">OP_SHA256</span><span class="p">:</span> <span class="s">&#39;OP_SHA256&#39;</span><span class="p">,</span>
+    <span class="n">OP_HASH160</span><span class="p">:</span> <span class="s">&#39;OP_HASH160&#39;</span><span class="p">,</span>
+    <span class="n">OP_HASH256</span><span class="p">:</span> <span class="s">&#39;OP_HASH256&#39;</span><span class="p">,</span>
+    <span class="n">OP_CODESEPARATOR</span><span class="p">:</span> <span class="s">&#39;OP_CODESEPARATOR&#39;</span><span class="p">,</span>
+    <span class="n">OP_CHECKSIG</span><span class="p">:</span> <span class="s">&#39;OP_CHECKSIG&#39;</span><span class="p">,</span>
+    <span class="n">OP_CHECKSIGVERIFY</span><span class="p">:</span> <span class="s">&#39;OP_CHECKSIGVERIFY&#39;</span><span class="p">,</span>
+    <span class="n">OP_CHECKMULTISIG</span><span class="p">:</span> <span class="s">&#39;OP_CHECKMULTISIG&#39;</span><span class="p">,</span>
+    <span class="n">OP_CHECKMULTISIGVERIFY</span><span class="p">:</span> <span class="s">&#39;OP_CHECKMULTISIGVERIFY&#39;</span><span class="p">,</span>
+    <span class="n">OP_NOP1</span><span class="p">:</span> <span class="s">&#39;OP_NOP1&#39;</span><span class="p">,</span>
+    <span class="n">OP_NOP2</span><span class="p">:</span> <span class="s">&#39;OP_NOP2&#39;</span><span class="p">,</span>
+    <span class="n">OP_NOP3</span><span class="p">:</span> <span class="s">&#39;OP_NOP3&#39;</span><span class="p">,</span>
+    <span class="n">OP_NOP4</span><span class="p">:</span> <span class="s">&#39;OP_NOP4&#39;</span><span class="p">,</span>
+    <span class="n">OP_NOP5</span><span class="p">:</span> <span class="s">&#39;OP_NOP5&#39;</span><span class="p">,</span>
+    <span class="n">OP_NOP6</span><span class="p">:</span> <span class="s">&#39;OP_NOP6&#39;</span><span class="p">,</span>
+    <span class="n">OP_NOP7</span><span class="p">:</span> <span class="s">&#39;OP_NOP7&#39;</span><span class="p">,</span>
+    <span class="n">OP_NOP8</span><span class="p">:</span> <span class="s">&#39;OP_NOP8&#39;</span><span class="p">,</span>
+    <span class="n">OP_NOP9</span><span class="p">:</span> <span class="s">&#39;OP_NOP9&#39;</span><span class="p">,</span>
+    <span class="n">OP_NOP10</span><span class="p">:</span> <span class="s">&#39;OP_NOP10&#39;</span><span class="p">,</span>
+    <span class="n">OP_SMALLINTEGER</span><span class="p">:</span> <span class="s">&#39;OP_SMALLINTEGER&#39;</span><span class="p">,</span>
+    <span class="n">OP_PUBKEYS</span><span class="p">:</span> <span class="s">&#39;OP_PUBKEYS&#39;</span><span class="p">,</span>
+    <span class="n">OP_PUBKEYHASH</span><span class="p">:</span> <span class="s">&#39;OP_PUBKEYHASH&#39;</span><span class="p">,</span>
+    <span class="n">OP_PUBKEY</span><span class="p">:</span> <span class="s">&#39;OP_PUBKEY&#39;</span><span class="p">,</span>
+    <span class="n">OP_INVALIDOPCODE</span><span class="p">:</span> <span class="s">&#39;OP_INVALIDOPCODE&#39;</span><span class="p">,</span>
+<span class="p">})</span>
+
+<span class="n">OPCODES_BY_NAME</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;OP_0&#39;</span><span class="p">:</span> <span class="n">OP_0</span><span class="p">,</span>
+    <span class="s">&#39;OP_PUSHDATA1&#39;</span><span class="p">:</span> <span class="n">OP_PUSHDATA1</span><span class="p">,</span>
+    <span class="s">&#39;OP_PUSHDATA2&#39;</span><span class="p">:</span> <span class="n">OP_PUSHDATA2</span><span class="p">,</span>
+    <span class="s">&#39;OP_PUSHDATA4&#39;</span><span class="p">:</span> <span class="n">OP_PUSHDATA4</span><span class="p">,</span>
+    <span class="s">&#39;OP_1NEGATE&#39;</span><span class="p">:</span> <span class="n">OP_1NEGATE</span><span class="p">,</span>
+    <span class="s">&#39;OP_RESERVED&#39;</span><span class="p">:</span> <span class="n">OP_RESERVED</span><span class="p">,</span>
+    <span class="s">&#39;OP_1&#39;</span><span class="p">:</span> <span class="n">OP_1</span><span class="p">,</span>
+    <span class="s">&#39;OP_2&#39;</span><span class="p">:</span> <span class="n">OP_2</span><span class="p">,</span>
+    <span class="s">&#39;OP_3&#39;</span><span class="p">:</span> <span class="n">OP_3</span><span class="p">,</span>
+    <span class="s">&#39;OP_4&#39;</span><span class="p">:</span> <span class="n">OP_4</span><span class="p">,</span>
+    <span class="s">&#39;OP_5&#39;</span><span class="p">:</span> <span class="n">OP_5</span><span class="p">,</span>
+    <span class="s">&#39;OP_6&#39;</span><span class="p">:</span> <span class="n">OP_6</span><span class="p">,</span>
+    <span class="s">&#39;OP_7&#39;</span><span class="p">:</span> <span class="n">OP_7</span><span class="p">,</span>
+    <span class="s">&#39;OP_8&#39;</span><span class="p">:</span> <span class="n">OP_8</span><span class="p">,</span>
+    <span class="s">&#39;OP_9&#39;</span><span class="p">:</span> <span class="n">OP_9</span><span class="p">,</span>
+    <span class="s">&#39;OP_10&#39;</span><span class="p">:</span> <span class="n">OP_10</span><span class="p">,</span>
+    <span class="s">&#39;OP_11&#39;</span><span class="p">:</span> <span class="n">OP_11</span><span class="p">,</span>
+    <span class="s">&#39;OP_12&#39;</span><span class="p">:</span> <span class="n">OP_12</span><span class="p">,</span>
+    <span class="s">&#39;OP_13&#39;</span><span class="p">:</span> <span class="n">OP_13</span><span class="p">,</span>
+    <span class="s">&#39;OP_14&#39;</span><span class="p">:</span> <span class="n">OP_14</span><span class="p">,</span>
+    <span class="s">&#39;OP_15&#39;</span><span class="p">:</span> <span class="n">OP_15</span><span class="p">,</span>
+    <span class="s">&#39;OP_16&#39;</span><span class="p">:</span> <span class="n">OP_16</span><span class="p">,</span>
+    <span class="s">&#39;OP_NOP&#39;</span><span class="p">:</span> <span class="n">OP_NOP</span><span class="p">,</span>
+    <span class="s">&#39;OP_VER&#39;</span><span class="p">:</span> <span class="n">OP_VER</span><span class="p">,</span>
+    <span class="s">&#39;OP_IF&#39;</span><span class="p">:</span> <span class="n">OP_IF</span><span class="p">,</span>
+    <span class="s">&#39;OP_NOTIF&#39;</span><span class="p">:</span> <span class="n">OP_NOTIF</span><span class="p">,</span>
+    <span class="s">&#39;OP_VERIF&#39;</span><span class="p">:</span> <span class="n">OP_VERIF</span><span class="p">,</span>
+    <span class="s">&#39;OP_VERNOTIF&#39;</span><span class="p">:</span> <span class="n">OP_VERNOTIF</span><span class="p">,</span>
+    <span class="s">&#39;OP_ELSE&#39;</span><span class="p">:</span> <span class="n">OP_ELSE</span><span class="p">,</span>
+    <span class="s">&#39;OP_ENDIF&#39;</span><span class="p">:</span> <span class="n">OP_ENDIF</span><span class="p">,</span>
+    <span class="s">&#39;OP_VERIFY&#39;</span><span class="p">:</span> <span class="n">OP_VERIFY</span><span class="p">,</span>
+    <span class="s">&#39;OP_RETURN&#39;</span><span class="p">:</span> <span class="n">OP_RETURN</span><span class="p">,</span>
+    <span class="s">&#39;OP_TOALTSTACK&#39;</span><span class="p">:</span> <span class="n">OP_TOALTSTACK</span><span class="p">,</span>
+    <span class="s">&#39;OP_FROMALTSTACK&#39;</span><span class="p">:</span> <span class="n">OP_FROMALTSTACK</span><span class="p">,</span>
+    <span class="s">&#39;OP_2DROP&#39;</span><span class="p">:</span> <span class="n">OP_2DROP</span><span class="p">,</span>
+    <span class="s">&#39;OP_2DUP&#39;</span><span class="p">:</span> <span class="n">OP_2DUP</span><span class="p">,</span>
+    <span class="s">&#39;OP_3DUP&#39;</span><span class="p">:</span> <span class="n">OP_3DUP</span><span class="p">,</span>
+    <span class="s">&#39;OP_2OVER&#39;</span><span class="p">:</span> <span class="n">OP_2OVER</span><span class="p">,</span>
+    <span class="s">&#39;OP_2ROT&#39;</span><span class="p">:</span> <span class="n">OP_2ROT</span><span class="p">,</span>
+    <span class="s">&#39;OP_2SWAP&#39;</span><span class="p">:</span> <span class="n">OP_2SWAP</span><span class="p">,</span>
+    <span class="s">&#39;OP_IFDUP&#39;</span><span class="p">:</span> <span class="n">OP_IFDUP</span><span class="p">,</span>
+    <span class="s">&#39;OP_DEPTH&#39;</span><span class="p">:</span> <span class="n">OP_DEPTH</span><span class="p">,</span>
+    <span class="s">&#39;OP_DROP&#39;</span><span class="p">:</span> <span class="n">OP_DROP</span><span class="p">,</span>
+    <span class="s">&#39;OP_DUP&#39;</span><span class="p">:</span> <span class="n">OP_DUP</span><span class="p">,</span>
+    <span class="s">&#39;OP_NIP&#39;</span><span class="p">:</span> <span class="n">OP_NIP</span><span class="p">,</span>
+    <span class="s">&#39;OP_OVER&#39;</span><span class="p">:</span> <span class="n">OP_OVER</span><span class="p">,</span>
+    <span class="s">&#39;OP_PICK&#39;</span><span class="p">:</span> <span class="n">OP_PICK</span><span class="p">,</span>
+    <span class="s">&#39;OP_ROLL&#39;</span><span class="p">:</span> <span class="n">OP_ROLL</span><span class="p">,</span>
+    <span class="s">&#39;OP_ROT&#39;</span><span class="p">:</span> <span class="n">OP_ROT</span><span class="p">,</span>
+    <span class="s">&#39;OP_SWAP&#39;</span><span class="p">:</span> <span class="n">OP_SWAP</span><span class="p">,</span>
+    <span class="s">&#39;OP_TUCK&#39;</span><span class="p">:</span> <span class="n">OP_TUCK</span><span class="p">,</span>
+    <span class="s">&#39;OP_CAT&#39;</span><span class="p">:</span> <span class="n">OP_CAT</span><span class="p">,</span>
+    <span class="s">&#39;OP_SUBSTR&#39;</span><span class="p">:</span> <span class="n">OP_SUBSTR</span><span class="p">,</span>
+    <span class="s">&#39;OP_LEFT&#39;</span><span class="p">:</span> <span class="n">OP_LEFT</span><span class="p">,</span>
+    <span class="s">&#39;OP_RIGHT&#39;</span><span class="p">:</span> <span class="n">OP_RIGHT</span><span class="p">,</span>
+    <span class="s">&#39;OP_SIZE&#39;</span><span class="p">:</span> <span class="n">OP_SIZE</span><span class="p">,</span>
+    <span class="s">&#39;OP_INVERT&#39;</span><span class="p">:</span> <span class="n">OP_INVERT</span><span class="p">,</span>
+    <span class="s">&#39;OP_AND&#39;</span><span class="p">:</span> <span class="n">OP_AND</span><span class="p">,</span>
+    <span class="s">&#39;OP_OR&#39;</span><span class="p">:</span> <span class="n">OP_OR</span><span class="p">,</span>
+    <span class="s">&#39;OP_XOR&#39;</span><span class="p">:</span> <span class="n">OP_XOR</span><span class="p">,</span>
+    <span class="s">&#39;OP_EQUAL&#39;</span><span class="p">:</span> <span class="n">OP_EQUAL</span><span class="p">,</span>
+    <span class="s">&#39;OP_EQUALVERIFY&#39;</span><span class="p">:</span> <span class="n">OP_EQUALVERIFY</span><span class="p">,</span>
+    <span class="s">&#39;OP_RESERVED1&#39;</span><span class="p">:</span> <span class="n">OP_RESERVED1</span><span class="p">,</span>
+    <span class="s">&#39;OP_RESERVED2&#39;</span><span class="p">:</span> <span class="n">OP_RESERVED2</span><span class="p">,</span>
+    <span class="s">&#39;OP_1ADD&#39;</span><span class="p">:</span> <span class="n">OP_1ADD</span><span class="p">,</span>
+    <span class="s">&#39;OP_1SUB&#39;</span><span class="p">:</span> <span class="n">OP_1SUB</span><span class="p">,</span>
+    <span class="s">&#39;OP_2MUL&#39;</span><span class="p">:</span> <span class="n">OP_2MUL</span><span class="p">,</span>
+    <span class="s">&#39;OP_2DIV&#39;</span><span class="p">:</span> <span class="n">OP_2DIV</span><span class="p">,</span>
+    <span class="s">&#39;OP_NEGATE&#39;</span><span class="p">:</span> <span class="n">OP_NEGATE</span><span class="p">,</span>
+    <span class="s">&#39;OP_ABS&#39;</span><span class="p">:</span> <span class="n">OP_ABS</span><span class="p">,</span>
+    <span class="s">&#39;OP_NOT&#39;</span><span class="p">:</span> <span class="n">OP_NOT</span><span class="p">,</span>
+    <span class="s">&#39;OP_0NOTEQUAL&#39;</span><span class="p">:</span> <span class="n">OP_0NOTEQUAL</span><span class="p">,</span>
+    <span class="s">&#39;OP_ADD&#39;</span><span class="p">:</span> <span class="n">OP_ADD</span><span class="p">,</span>
+    <span class="s">&#39;OP_SUB&#39;</span><span class="p">:</span> <span class="n">OP_SUB</span><span class="p">,</span>
+    <span class="s">&#39;OP_MUL&#39;</span><span class="p">:</span> <span class="n">OP_MUL</span><span class="p">,</span>
+    <span class="s">&#39;OP_DIV&#39;</span><span class="p">:</span> <span class="n">OP_DIV</span><span class="p">,</span>
+    <span class="s">&#39;OP_MOD&#39;</span><span class="p">:</span> <span class="n">OP_MOD</span><span class="p">,</span>
+    <span class="s">&#39;OP_LSHIFT&#39;</span><span class="p">:</span> <span class="n">OP_LSHIFT</span><span class="p">,</span>
+    <span class="s">&#39;OP_RSHIFT&#39;</span><span class="p">:</span> <span class="n">OP_RSHIFT</span><span class="p">,</span>
+    <span class="s">&#39;OP_BOOLAND&#39;</span><span class="p">:</span> <span class="n">OP_BOOLAND</span><span class="p">,</span>
+    <span class="s">&#39;OP_BOOLOR&#39;</span><span class="p">:</span> <span class="n">OP_BOOLOR</span><span class="p">,</span>
+    <span class="s">&#39;OP_NUMEQUAL&#39;</span><span class="p">:</span> <span class="n">OP_NUMEQUAL</span><span class="p">,</span>
+    <span class="s">&#39;OP_NUMEQUALVERIFY&#39;</span><span class="p">:</span> <span class="n">OP_NUMEQUALVERIFY</span><span class="p">,</span>
+    <span class="s">&#39;OP_NUMNOTEQUAL&#39;</span><span class="p">:</span> <span class="n">OP_NUMNOTEQUAL</span><span class="p">,</span>
+    <span class="s">&#39;OP_LESSTHAN&#39;</span><span class="p">:</span> <span class="n">OP_LESSTHAN</span><span class="p">,</span>
+    <span class="s">&#39;OP_GREATERTHAN&#39;</span><span class="p">:</span> <span class="n">OP_GREATERTHAN</span><span class="p">,</span>
+    <span class="s">&#39;OP_LESSTHANOREQUAL&#39;</span><span class="p">:</span> <span class="n">OP_LESSTHANOREQUAL</span><span class="p">,</span>
+    <span class="s">&#39;OP_GREATERTHANOREQUAL&#39;</span><span class="p">:</span> <span class="n">OP_GREATERTHANOREQUAL</span><span class="p">,</span>
+    <span class="s">&#39;OP_MIN&#39;</span><span class="p">:</span> <span class="n">OP_MIN</span><span class="p">,</span>
+    <span class="s">&#39;OP_MAX&#39;</span><span class="p">:</span> <span class="n">OP_MAX</span><span class="p">,</span>
+    <span class="s">&#39;OP_WITHIN&#39;</span><span class="p">:</span> <span class="n">OP_WITHIN</span><span class="p">,</span>
+    <span class="s">&#39;OP_RIPEMD160&#39;</span><span class="p">:</span> <span class="n">OP_RIPEMD160</span><span class="p">,</span>
+    <span class="s">&#39;OP_SHA1&#39;</span><span class="p">:</span> <span class="n">OP_SHA1</span><span class="p">,</span>
+    <span class="s">&#39;OP_SHA256&#39;</span><span class="p">:</span> <span class="n">OP_SHA256</span><span class="p">,</span>
+    <span class="s">&#39;OP_HASH160&#39;</span><span class="p">:</span> <span class="n">OP_HASH160</span><span class="p">,</span>
+    <span class="s">&#39;OP_HASH256&#39;</span><span class="p">:</span> <span class="n">OP_HASH256</span><span class="p">,</span>
+    <span class="s">&#39;OP_CODESEPARATOR&#39;</span><span class="p">:</span> <span class="n">OP_CODESEPARATOR</span><span class="p">,</span>
+    <span class="s">&#39;OP_CHECKSIG&#39;</span><span class="p">:</span> <span class="n">OP_CHECKSIG</span><span class="p">,</span>
+    <span class="s">&#39;OP_CHECKSIGVERIFY&#39;</span><span class="p">:</span> <span class="n">OP_CHECKSIGVERIFY</span><span class="p">,</span>
+    <span class="s">&#39;OP_CHECKMULTISIG&#39;</span><span class="p">:</span> <span class="n">OP_CHECKMULTISIG</span><span class="p">,</span>
+    <span class="s">&#39;OP_CHECKMULTISIGVERIFY&#39;</span><span class="p">:</span> <span class="n">OP_CHECKMULTISIGVERIFY</span><span class="p">,</span>
+    <span class="s">&#39;OP_NOP1&#39;</span><span class="p">:</span> <span class="n">OP_NOP1</span><span class="p">,</span>
+    <span class="s">&#39;OP_NOP2&#39;</span><span class="p">:</span> <span class="n">OP_NOP2</span><span class="p">,</span>
+    <span class="s">&#39;OP_NOP3&#39;</span><span class="p">:</span> <span class="n">OP_NOP3</span><span class="p">,</span>
+    <span class="s">&#39;OP_NOP4&#39;</span><span class="p">:</span> <span class="n">OP_NOP4</span><span class="p">,</span>
+    <span class="s">&#39;OP_NOP5&#39;</span><span class="p">:</span> <span class="n">OP_NOP5</span><span class="p">,</span>
+    <span class="s">&#39;OP_NOP6&#39;</span><span class="p">:</span> <span class="n">OP_NOP6</span><span class="p">,</span>
+    <span class="s">&#39;OP_NOP7&#39;</span><span class="p">:</span> <span class="n">OP_NOP7</span><span class="p">,</span>
+    <span class="s">&#39;OP_NOP8&#39;</span><span class="p">:</span> <span class="n">OP_NOP8</span><span class="p">,</span>
+    <span class="s">&#39;OP_NOP9&#39;</span><span class="p">:</span> <span class="n">OP_NOP9</span><span class="p">,</span>
+    <span class="s">&#39;OP_NOP10&#39;</span><span class="p">:</span> <span class="n">OP_NOP10</span><span class="p">,</span>
+    <span class="s">&#39;OP_SMALLINTEGER&#39;</span><span class="p">:</span> <span class="n">OP_SMALLINTEGER</span><span class="p">,</span>
+    <span class="s">&#39;OP_PUBKEYS&#39;</span><span class="p">:</span> <span class="n">OP_PUBKEYS</span><span class="p">,</span>
+    <span class="s">&#39;OP_PUBKEYHASH&#39;</span><span class="p">:</span> <span class="n">OP_PUBKEYHASH</span><span class="p">,</span>
+    <span class="s">&#39;OP_PUBKEY&#39;</span><span class="p">:</span> <span class="n">OP_PUBKEY</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c"># Invalid even when occuring in an unexecuted OP_IF branch due to either being</span>
+<span class="c"># disabled, or never having been implemented.</span>
+<span class="n">DISABLED_OPCODES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">((</span><span class="n">OP_VERIF</span><span class="p">,</span> <span class="n">OP_VERNOTIF</span><span class="p">,</span>
+                              <span class="n">OP_CAT</span><span class="p">,</span> <span class="n">OP_SUBSTR</span><span class="p">,</span> <span class="n">OP_LEFT</span><span class="p">,</span> <span class="n">OP_RIGHT</span><span class="p">,</span> <span class="n">OP_INVERT</span><span class="p">,</span> <span class="n">OP_AND</span><span class="p">,</span>
+                              <span class="n">OP_OR</span><span class="p">,</span> <span class="n">OP_XOR</span><span class="p">,</span> <span class="n">OP_2MUL</span><span class="p">,</span> <span class="n">OP_2DIV</span><span class="p">,</span> <span class="n">OP_MUL</span><span class="p">,</span> <span class="n">OP_DIV</span><span class="p">,</span> <span class="n">OP_MOD</span><span class="p">,</span>
+                              <span class="n">OP_LSHIFT</span><span class="p">,</span> <span class="n">OP_RSHIFT</span><span class="p">))</span>
+
+<div class="viewcode-block" id="CScriptInvalidError"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScriptInvalidError">[docs]</a><span class="k">class</span> <span class="nc">CScriptInvalidError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for CScript exceptions&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="CScriptTruncatedPushDataError"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScriptTruncatedPushDataError">[docs]</a><span class="k">class</span> <span class="nc">CScriptTruncatedPushDataError</span><span class="p">(</span><span class="n">CScriptInvalidError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Invalid pushdata due to truncation&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CScriptTruncatedPushDataError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CScript"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScript">[docs]</a><span class="k">class</span> <span class="nc">CScript</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Serialized script</span>
+
+<span class="sd">    A bytes subclass, so you can use this directly whenever bytes are accepted.</span>
+<span class="sd">    Note that this means that indexing does *not* work - you&#39;ll get an index by</span>
+<span class="sd">    byte rather than opcode. This format was chosen for efficiency so that the</span>
+<span class="sd">    general case would not require creating a lot of little CScriptOP objects.</span>
+
+<span class="sd">    iter(script) however does iterate by opcode.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__coerce_instance</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="c"># Coerce other into bytes</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">CScriptOp</span><span class="p">):</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="n">_bchr</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">long</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">other</span> <span class="o">&lt;=</span> <span class="mi">16</span><span class="p">:</span>
+                <span class="n">other</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">_bchr</span><span class="p">(</span><span class="n">CScriptOp</span><span class="o">.</span><span class="n">encode_op_n</span><span class="p">(</span><span class="n">other</span><span class="p">)))</span>
+            <span class="k">elif</span> <span class="n">other</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">other</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">_bchr</span><span class="p">(</span><span class="n">OP_1NEGATE</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">other</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="o">.</span><span class="n">encode_op_pushdata</span><span class="p">(</span><span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">_bignum</span><span class="o">.</span><span class="n">bn2vch</span><span class="p">(</span><span class="n">other</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytearray</span><span class="p">)):</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="o">.</span><span class="n">encode_op_pushdata</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">other</span>
+
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="c"># Do the coercion outside of the try block so that errors in it are</span>
+        <span class="c"># noticed.</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__coerce_instance</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c"># bytes.__add__ always returns bytes instances unfortunately</span>
+            <span class="k">return</span> <span class="n">CScript</span><span class="p">(</span><span class="nb">super</span><span class="p">(</span><span class="n">CScript</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__add__</span><span class="p">(</span><span class="n">other</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;Can not add a </span><span class="si">%r</span><span class="s"> instance to a CScript&#39;</span> <span class="o">%</span> <span class="n">other</span><span class="o">.</span><span class="n">__class__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CScript.join"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScript.join">[docs]</a>    <span class="k">def</span> <span class="nf">join</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
+        <span class="c"># join makes no sense for a CScript()</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bytearray</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">CScript</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">coerce_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">cls</span><span class="o">.</span><span class="n">__coerce_instance</span><span class="p">(</span><span class="n">instance</span><span class="p">)</span>
+            <span class="c"># Annoyingly on both python2 and python3 bytes.join() always</span>
+            <span class="c"># returns a bytes instance even when subclassed.</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">CScript</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">b</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">coerce_iterable</span><span class="p">(</span><span class="n">value</span><span class="p">)))</span>
+
+<div class="viewcode-block" id="CScript.raw_iter"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScript.raw_iter">[docs]</a>    <span class="k">def</span> <span class="nf">raw_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Raw iteration</span>
+
+<span class="sd">        Yields tuples of (opcode, data, sop_idx) so that the different possible</span>
+<span class="sd">        PUSHDATA encodings can be accurately distinguished, as well as</span>
+<span class="sd">        determining the exact opcode byte indexes. (sop_idx)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">sop_idx</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="n">opcode</span> <span class="o">=</span> <span class="n">_bord</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">opcode</span> <span class="o">&gt;</span> <span class="n">OP_PUSHDATA4</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="n">opcode</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">sop_idx</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">datasize</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="n">pushdata_type</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="k">if</span> <span class="n">opcode</span> <span class="o">&lt;</span> <span class="n">OP_PUSHDATA1</span><span class="p">:</span>
+                    <span class="n">pushdata_type</span> <span class="o">=</span> <span class="s">&#39;PUSHDATA(</span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="n">opcode</span>
+                    <span class="n">datasize</span> <span class="o">=</span> <span class="n">opcode</span>
+
+                <span class="k">elif</span> <span class="n">opcode</span> <span class="o">==</span> <span class="n">OP_PUSHDATA1</span><span class="p">:</span>
+                    <span class="n">pushdata_type</span> <span class="o">=</span> <span class="s">&#39;PUSHDATA1&#39;</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="n">CScriptInvalidError</span><span class="p">(</span><span class="s">&#39;PUSHDATA1: missing data length&#39;</span><span class="p">)</span>
+                    <span class="n">datasize</span> <span class="o">=</span> <span class="n">_bord</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="k">elif</span> <span class="n">opcode</span> <span class="o">==</span> <span class="n">OP_PUSHDATA2</span><span class="p">:</span>
+                    <span class="n">pushdata_type</span> <span class="o">=</span> <span class="s">&#39;PUSHDATA2&#39;</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="n">CScriptInvalidError</span><span class="p">(</span><span class="s">&#39;PUSHDATA2: missing data length&#39;</span><span class="p">)</span>
+                    <span class="n">datasize</span> <span class="o">=</span> <span class="n">_bord</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="n">_bord</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span>
+                    <span class="n">i</span> <span class="o">+=</span> <span class="mi">2</span>
+
+                <span class="k">elif</span> <span class="n">opcode</span> <span class="o">==</span> <span class="n">OP_PUSHDATA4</span><span class="p">:</span>
+                    <span class="n">pushdata_type</span> <span class="o">=</span> <span class="s">&#39;PUSHDATA4&#39;</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="n">CScriptInvalidError</span><span class="p">(</span><span class="s">&#39;PUSHDATA4: missing data length&#39;</span><span class="p">)</span>
+                    <span class="n">datasize</span> <span class="o">=</span> <span class="n">_bord</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="n">_bord</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">_bord</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">])</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">_bord</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">3</span><span class="p">])</span> <span class="o">&lt;&lt;</span> <span class="mi">24</span><span class="p">)</span>
+                    <span class="n">i</span> <span class="o">+=</span> <span class="mi">4</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="bp">False</span> <span class="c"># shouldn&#39;t happen</span>
+
+
+                <span class="n">data</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">datasize</span><span class="p">])</span>
+
+                <span class="c"># Check for truncation</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">datasize</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">CScriptTruncatedPushDataError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">: truncated data&#39;</span> <span class="o">%</span> <span class="n">pushdata_type</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+                <span class="n">i</span> <span class="o">+=</span> <span class="n">datasize</span>
+
+                <span class="k">yield</span> <span class="p">(</span><span class="n">opcode</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sop_idx</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;&#39;Cooked&#39; iteration</span>
+
+<span class="sd">        Returns either a CScriptOP instance, an integer, or bytes, as</span>
+<span class="sd">        appropriate.</span>
+
+<span class="sd">        See raw_iter() if you need to distinguish the different possible</span>
+<span class="sd">        PUSHDATA encodings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">opcode</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sop_idx</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_iter</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">data</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">opcode</span> <span class="o">=</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="n">opcode</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">opcode</span><span class="o">.</span><span class="n">is_small_int</span><span class="p">():</span>
+                    <span class="k">yield</span> <span class="n">opcode</span><span class="o">.</span><span class="n">decode_op_n</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">CScriptOp</span><span class="p">(</span><span class="n">opcode</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># For Python3 compatibility add b before strings so testcases don&#39;t</span>
+        <span class="c"># need to change</span>
+        <span class="k">def</span> <span class="nf">_repr</span><span class="p">(</span><span class="n">o</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+                <span class="k">return</span> <span class="s">&quot;x(&#39;</span><span class="si">%s</span><span class="s">&#39;)&quot;</span> <span class="o">%</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">b2x</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+
+        <span class="n">ops</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">op</span> <span class="o">=</span> <span class="n">_repr</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="k">except</span> <span class="n">CScriptTruncatedPushDataError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                <span class="n">op</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">...&lt;ERROR: </span><span class="si">%s</span><span class="s">&gt;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">_repr</span><span class="p">(</span><span class="n">err</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">err</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">except</span> <span class="n">CScriptInvalidError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                <span class="n">op</span> <span class="o">=</span> <span class="s">&#39;&lt;ERROR: </span><span class="si">%s</span><span class="s">&gt;&#39;</span> <span class="o">%</span> <span class="n">err</span>
+                <span class="k">break</span>
+            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">op</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">ops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="s">&quot;CScript([</span><span class="si">%s</span><span class="s">])&quot;</span> <span class="o">%</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CScript.is_p2sh"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScript.is_p2sh">[docs]</a>    <span class="k">def</span> <span class="nf">is_p2sh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Test if the script is a p2sh scriptPubKey</span>
+
+<span class="sd">        Note that this test is consensus-critical.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="mi">23</span> <span class="ow">and</span>
+                <span class="n">_bord</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">OP_HASH160</span> <span class="ow">and</span>
+                <span class="n">_bord</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="mh">0x14</span> <span class="ow">and</span>
+                <span class="n">_bord</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="mi">22</span><span class="p">])</span> <span class="o">==</span> <span class="n">OP_EQUAL</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CScript.is_push_only"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScript.is_push_only">[docs]</a>    <span class="k">def</span> <span class="nf">is_push_only</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Test if the script only contains pushdata ops</span>
+
+<span class="sd">        Note that this test is consensus-critical.</span>
+
+<span class="sd">        Scripts that contain invalid pushdata ops return False, matching the</span>
+<span class="sd">        behavior in Bitcoin Core.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">op_data</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_iter</span><span class="p">():</span>
+                <span class="c"># Note how OP_RESERVED is considered a pushdata op.</span>
+                <span class="k">if</span> <span class="n">op</span> <span class="o">&gt;</span> <span class="n">OP_16</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="k">except</span> <span class="n">CScriptInvalidError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="CScript.has_canonical_pushes"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScript.has_canonical_pushes">[docs]</a>    <span class="k">def</span> <span class="nf">has_canonical_pushes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Test if script only uses canonical pushes</span>
+
+<span class="sd">        Not yet consensus critical; may be in the future.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_iter</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">op</span> <span class="o">&gt;</span> <span class="n">OP_16</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="k">elif</span> <span class="n">op</span> <span class="o">&lt;</span> <span class="n">OP_PUSHDATA1</span> <span class="ow">and</span> <span class="n">op</span> <span class="o">&gt;</span> <span class="n">OP_0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">_bord</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">16</span><span class="p">:</span>
+                    <span class="c"># Could have used an OP_n code, rather than a 1-byte push.</span>
+                    <span class="k">return</span> <span class="bp">False</span>
+
+                <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="n">OP_PUSHDATA1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">OP_PUSHDATA1</span><span class="p">:</span>
+                    <span class="c"># Could have used a normal n-byte push, rather than OP_PUSHDATA1.</span>
+                    <span class="k">return</span> <span class="bp">False</span>
+
+                <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="n">OP_PUSHDATA2</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mh">0xFF</span><span class="p">:</span>
+                    <span class="c"># Could have used a OP_PUSHDATA1.</span>
+                    <span class="k">return</span> <span class="bp">False</span>
+
+                <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="n">OP_PUSHDATA4</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mh">0xFFFF</span><span class="p">:</span>
+                    <span class="c"># Could have used a OP_PUSHDATA2.</span>
+                    <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="k">except</span> <span class="n">CScriptInvalidError</span><span class="p">:</span> <span class="c"># Invalid pushdata</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="CScript.is_unspendable"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScript.is_unspendable">[docs]</a>    <span class="k">def</span> <span class="nf">is_unspendable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Test if the script is provably unspendable&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span>
+                <span class="n">_bord</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">OP_RETURN</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CScript.is_valid"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScript.is_valid">[docs]</a>    <span class="k">def</span> <span class="nf">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if the script is valid, False otherwise</span>
+
+<span class="sd">        The script is valid if all PUSHDATA&#39;s are valid; invalid opcodes do not</span>
+<span class="sd">        make is_valid() return False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">CScriptInvalidError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="CScript.to_p2sh_scriptPubKey"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScript.to_p2sh_scriptPubKey">[docs]</a>    <span class="k">def</span> <span class="nf">to_p2sh_scriptPubKey</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checksize</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create P2SH scriptPubKey from this redeemScript</span>
+
+<span class="sd">        That is, create the P2SH scriptPubKey that requires this script as a</span>
+<span class="sd">        redeemScript to spend.</span>
+
+<span class="sd">        checksize - Check if the redeemScript is larger than the 520-byte max</span>
+<span class="sd">        pushdata limit; raise ValueError if limit exceeded.</span>
+
+<span class="sd">        Since a &gt;520-byte PUSHDATA makes EvalScript() fail, it&#39;s not actually</span>
+<span class="sd">        possible to redeem P2SH outputs with redeem scripts &gt;520 bytes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">checksize</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">MAX_SCRIPT_ELEMENT_SIZE</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;redeemScript exceeds max allowed size; P2SH output would be unspendable&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">CScript</span><span class="p">([</span><span class="n">OP_HASH160</span><span class="p">,</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Hash160</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">OP_EQUAL</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="CScript.GetSigOpCount"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.CScript.GetSigOpCount">[docs]</a>    <span class="k">def</span> <span class="nf">GetSigOpCount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fAccurate</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the SigOp count.</span>
+
+<span class="sd">        fAccurate - Accurately count CHECKMULTISIG, see BIP16 for details.</span>
+
+<span class="sd">        Note that this is consensus-critical.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">lastOpcode</span> <span class="o">=</span> <span class="n">OP_INVALIDOPCODE</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">opcode</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sop_idx</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_iter</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">opcode</span> <span class="ow">in</span> <span class="p">(</span><span class="n">OP_CHECKSIG</span><span class="p">,</span> <span class="n">OP_CHECKSIGVERIFY</span><span class="p">):</span>
+                <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">opcode</span> <span class="ow">in</span> <span class="p">(</span><span class="n">OP_CHECKMULTISIG</span><span class="p">,</span> <span class="n">OP_CHECKMULTISIGVERIFY</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">fAccurate</span> <span class="ow">and</span> <span class="p">(</span><span class="n">OP_1</span> <span class="o">&lt;=</span> <span class="n">lastOpcode</span> <span class="o">&lt;=</span> <span class="n">OP_16</span><span class="p">):</span>
+                    <span class="n">n</span> <span class="o">+=</span> <span class="n">opcode</span><span class="o">.</span><span class="n">decode_op_n</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">n</span> <span class="o">+=</span> <span class="mi">20</span>
+            <span class="n">lastOpcode</span> <span class="o">=</span> <span class="n">opcode</span>
+        <span class="k">return</span> <span class="n">n</span>
+
+</div></div>
+<span class="n">SCRIPT_VERIFY_P2SH</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+<span class="n">SCRIPT_VERIFY_STRICTENC</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+<span class="n">SCRIPT_VERIFY_EVEN_S</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+<span class="n">SCRIPT_VERIFY_NOCACHE</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+
+<span class="n">SIGHASH_ALL</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">SIGHASH_NONE</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">SIGHASH_SINGLE</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">SIGHASH_ANYONECANPAY</span> <span class="o">=</span> <span class="mh">0x80</span>
+
+<div class="viewcode-block" id="FindAndDelete"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.FindAndDelete">[docs]</a><span class="k">def</span> <span class="nf">FindAndDelete</span><span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="n">sig</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Consensus critical, see FindAndDelete() in Satoshi codebase&quot;&quot;&quot;</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;&#39;</span>
+    <span class="n">last_sop_idx</span> <span class="o">=</span> <span class="n">sop_idx</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">skip</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">opcode</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sop_idx</span><span class="p">)</span> <span class="ow">in</span> <span class="n">script</span><span class="o">.</span><span class="n">raw_iter</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">skip</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">+=</span> <span class="n">script</span><span class="p">[</span><span class="n">last_sop_idx</span><span class="p">:</span><span class="n">sop_idx</span><span class="p">]</span>
+        <span class="n">last_sop_idx</span> <span class="o">=</span> <span class="n">sop_idx</span>
+        <span class="k">if</span> <span class="n">script</span><span class="p">[</span><span class="n">sop_idx</span><span class="p">:</span><span class="n">sop_idx</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">sig</span><span class="p">)]</span> <span class="o">==</span> <span class="n">sig</span><span class="p">:</span>
+            <span class="n">skip</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">skip</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">skip</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">+=</span> <span class="n">script</span><span class="p">[</span><span class="n">last_sop_idx</span><span class="p">:]</span>
+    <span class="k">return</span> <span class="n">CScript</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="IsLowDERSignature"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.IsLowDERSignature">[docs]</a><span class="k">def</span> <span class="nf">IsLowDERSignature</span><span class="p">(</span><span class="n">sig</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loosely correlates with IsLowDERSignature() from script/interpreter.cpp</span>
+<span class="sd">    Verifies that the S value in a DER signature is the lowest possible value.</span>
+<span class="sd">    Used by BIP62 malleability fixes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">length_r</span> <span class="o">=</span> <span class="n">sig</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">length_r</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">length_r</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;B&#39;</span><span class="p">,</span> <span class="n">length_r</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">length_s</span> <span class="o">=</span> <span class="n">sig</span><span class="p">[</span><span class="mi">5</span> <span class="o">+</span> <span class="n">length_r</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">length_s</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">length_s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;B&#39;</span><span class="p">,</span> <span class="n">length_s</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">s_val</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">length_s</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;B&#39;</span><span class="p">,</span> <span class="n">sig</span><span class="p">[</span><span class="mi">6</span> <span class="o">+</span> <span class="n">length_r</span><span class="p">:</span><span class="mi">6</span> <span class="o">+</span> <span class="n">length_r</span> <span class="o">+</span> <span class="n">length_s</span><span class="p">]))</span>
+
+    <span class="c"># If the S value is above the order of the curve divided by two, its</span>
+    <span class="c"># complement modulo the order could have been used instead, which is</span>
+    <span class="c"># one byte shorter when encoded correctly.</span>
+    <span class="n">max_mod_half_order</span> <span class="o">=</span> <span class="p">[</span>
+      <span class="mh">0x7f</span><span class="p">,</span><span class="mh">0xff</span><span class="p">,</span><span class="mh">0xff</span><span class="p">,</span><span class="mh">0xff</span><span class="p">,</span><span class="mh">0xff</span><span class="p">,</span><span class="mh">0xff</span><span class="p">,</span><span class="mh">0xff</span><span class="p">,</span><span class="mh">0xff</span><span class="p">,</span>
+      <span class="mh">0xff</span><span class="p">,</span><span class="mh">0xff</span><span class="p">,</span><span class="mh">0xff</span><span class="p">,</span><span class="mh">0xff</span><span class="p">,</span><span class="mh">0xff</span><span class="p">,</span><span class="mh">0xff</span><span class="p">,</span><span class="mh">0xff</span><span class="p">,</span><span class="mh">0xff</span><span class="p">,</span>
+      <span class="mh">0x5d</span><span class="p">,</span><span class="mh">0x57</span><span class="p">,</span><span class="mh">0x6e</span><span class="p">,</span><span class="mh">0x73</span><span class="p">,</span><span class="mh">0x57</span><span class="p">,</span><span class="mh">0xa4</span><span class="p">,</span><span class="mh">0x50</span><span class="p">,</span><span class="mh">0x1d</span><span class="p">,</span>
+      <span class="mh">0xdf</span><span class="p">,</span><span class="mh">0xe9</span><span class="p">,</span><span class="mh">0x2f</span><span class="p">,</span><span class="mh">0x46</span><span class="p">,</span><span class="mh">0x68</span><span class="p">,</span><span class="mh">0x1b</span><span class="p">,</span><span class="mh">0x20</span><span class="p">,</span><span class="mh">0xa0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">CompareBigEndian</span><span class="p">(</span><span class="n">s_val</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> \
+      <span class="n">CompareBigEndian</span><span class="p">(</span><span class="n">s_val</span><span class="p">,</span> <span class="n">max_mod_half_order</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+</div>
+<span class="k">def</span> <span class="nf">CompareBigEndian</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loosely matches CompareBigEndian() from eccryptoverify.cpp</span>
+<span class="sd">    Compares two arrays of bytes, and returns a negative value if the first is</span>
+<span class="sd">    less than the second, 0 if they&#39;re equal, and a positive value if the</span>
+<span class="sd">    first is greater than the second.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">c1</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">c1</span><span class="p">)</span>
+    <span class="n">c2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">c2</span><span class="p">)</span>
+
+    <span class="c"># Adjust starting positions until remaining lengths of the two arrays match</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">c1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">c2</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">c1</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">c2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">c1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">c2</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">c1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">c1</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">c2</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">diff</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">diff</span>
+
+    <span class="k">return</span> <span class="mi">0</span>
+
+
+<div class="viewcode-block" id="RawSignatureHash"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.RawSignatureHash">[docs]</a><span class="k">def</span> <span class="nf">RawSignatureHash</span><span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="n">txTo</span><span class="p">,</span> <span class="n">inIdx</span><span class="p">,</span> <span class="n">hashtype</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Consensus-correct SignatureHash</span>
+
+<span class="sd">    Returns (hash, err) to precisely match the consensus-critical behavior of</span>
+<span class="sd">    the SIGHASH_SINGLE bug. (inIdx is *not* checked for validity)</span>
+
+<span class="sd">    If you&#39;re just writing wallet software you probably want SignatureHash()</span>
+<span class="sd">    instead.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">HASH_ONE</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00</span><span class="s">&#39;</span>
+
+    <span class="k">if</span> <span class="n">inIdx</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">txTo</span><span class="o">.</span><span class="n">vin</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">HASH_ONE</span><span class="p">,</span> <span class="s">&quot;inIdx </span><span class="si">%d</span><span class="s"> out of range (</span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">inIdx</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">txTo</span><span class="o">.</span><span class="n">vin</span><span class="p">)))</span>
+    <span class="n">txtmp</span> <span class="o">=</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">CMutableTransaction</span><span class="o">.</span><span class="n">from_tx</span><span class="p">(</span><span class="n">txTo</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">txin</span> <span class="ow">in</span> <span class="n">txtmp</span><span class="o">.</span><span class="n">vin</span><span class="p">:</span>
+        <span class="n">txin</span><span class="o">.</span><span class="n">scriptSig</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;&#39;</span>
+    <span class="n">txtmp</span><span class="o">.</span><span class="n">vin</span><span class="p">[</span><span class="n">inIdx</span><span class="p">]</span><span class="o">.</span><span class="n">scriptSig</span> <span class="o">=</span> <span class="n">FindAndDelete</span><span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="n">CScript</span><span class="p">([</span><span class="n">OP_CODESEPARATOR</span><span class="p">]))</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">hashtype</span> <span class="o">&amp;</span> <span class="mh">0x1f</span><span class="p">)</span> <span class="o">==</span> <span class="n">SIGHASH_NONE</span><span class="p">:</span>
+        <span class="n">txtmp</span><span class="o">.</span><span class="n">vout</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">txtmp</span><span class="o">.</span><span class="n">vin</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">inIdx</span><span class="p">:</span>
+                <span class="n">txtmp</span><span class="o">.</span><span class="n">vin</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">nSequence</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">elif</span> <span class="p">(</span><span class="n">hashtype</span> <span class="o">&amp;</span> <span class="mh">0x1f</span><span class="p">)</span> <span class="o">==</span> <span class="n">SIGHASH_SINGLE</span><span class="p">:</span>
+        <span class="n">outIdx</span> <span class="o">=</span> <span class="n">inIdx</span>
+        <span class="k">if</span> <span class="n">outIdx</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">txtmp</span><span class="o">.</span><span class="n">vout</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">HASH_ONE</span><span class="p">,</span> <span class="s">&quot;outIdx </span><span class="si">%d</span><span class="s"> out of range (</span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">outIdx</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">txtmp</span><span class="o">.</span><span class="n">vout</span><span class="p">)))</span>
+
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">txtmp</span><span class="o">.</span><span class="n">vout</span><span class="p">[</span><span class="n">outIdx</span><span class="p">]</span>
+        <span class="n">txtmp</span><span class="o">.</span><span class="n">vout</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">outIdx</span><span class="p">):</span>
+            <span class="n">txtmp</span><span class="o">.</span><span class="n">vout</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">CTxOut</span><span class="p">())</span>
+        <span class="n">txtmp</span><span class="o">.</span><span class="n">vout</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">txtmp</span><span class="o">.</span><span class="n">vin</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">inIdx</span><span class="p">:</span>
+                <span class="n">txtmp</span><span class="o">.</span><span class="n">vin</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">nSequence</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="n">hashtype</span> <span class="o">&amp;</span> <span class="n">SIGHASH_ANYONECANPAY</span><span class="p">:</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">txtmp</span><span class="o">.</span><span class="n">vin</span><span class="p">[</span><span class="n">inIdx</span><span class="p">]</span>
+        <span class="n">txtmp</span><span class="o">.</span><span class="n">vin</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">txtmp</span><span class="o">.</span><span class="n">vin</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+
+    <span class="n">s</span> <span class="o">=</span> <span class="n">txtmp</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+    <span class="n">s</span> <span class="o">+=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">hashtype</span><span class="p">)</span>
+
+    <span class="nb">hash</span> <span class="o">=</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Hash</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="nb">hash</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="SignatureHash"><a class="viewcode-back" href="../../../bitcoin.core.html#bitcoin.core.script.SignatureHash">[docs]</a><span class="k">def</span> <span class="nf">SignatureHash</span><span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="n">txTo</span><span class="p">,</span> <span class="n">inIdx</span><span class="p">,</span> <span class="n">hashtype</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculate a signature hash</span>
+
+<span class="sd">    &#39;Cooked&#39; version that checks if inIdx is out of bounds - this is *not*</span>
+<span class="sd">    consensus-correct behavior, but is what you probably want for general</span>
+<span class="sd">    wallet use.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span> <span class="o">=</span> <span class="n">RawSignatureHash</span><span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="n">txTo</span><span class="p">,</span> <span class="n">inIdx</span><span class="p">,</span> <span class="n">hashtype</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">err</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">h</span>
+
+</div>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s">&#39;MAX_SCRIPT_SIZE&#39;</span><span class="p">,</span>
+        <span class="s">&#39;MAX_SCRIPT_ELEMENT_SIZE&#39;</span><span class="p">,</span>
+        <span class="s">&#39;MAX_SCRIPT_OPCODES&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OPCODE_NAMES&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CScriptOp&#39;</span><span class="p">,</span>
+
+        <span class="c"># every opcode</span>
+        <span class="s">&#39;OP_0&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_FALSE&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_PUSHDATA1&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_PUSHDATA2&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_PUSHDATA4&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_1NEGATE&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_RESERVED&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_1&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_TRUE&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_2&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_3&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_4&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_5&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_6&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_7&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_8&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_9&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_10&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_11&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_12&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_13&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_14&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_15&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_16&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NOP&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_VER&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_IF&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NOTIF&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_VERIF&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_VERNOTIF&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_ELSE&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_ENDIF&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_VERIFY&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_RETURN&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_TOALTSTACK&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_FROMALTSTACK&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_2DROP&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_2DUP&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_3DUP&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_2OVER&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_2ROT&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_2SWAP&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_IFDUP&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_DEPTH&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_DROP&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_DUP&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NIP&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_OVER&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_PICK&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_ROLL&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_ROT&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_SWAP&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_TUCK&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_CAT&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_SUBSTR&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_LEFT&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_RIGHT&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_SIZE&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_INVERT&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_AND&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_OR&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_XOR&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_EQUAL&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_EQUALVERIFY&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_RESERVED1&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_RESERVED2&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_1ADD&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_1SUB&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_2MUL&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_2DIV&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NEGATE&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_ABS&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NOT&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_0NOTEQUAL&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_ADD&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_SUB&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_MUL&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_DIV&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_MOD&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_LSHIFT&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_RSHIFT&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_BOOLAND&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_BOOLOR&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NUMEQUAL&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NUMEQUALVERIFY&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NUMNOTEQUAL&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_LESSTHAN&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_GREATERTHAN&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_LESSTHANOREQUAL&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_GREATERTHANOREQUAL&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_MIN&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_MAX&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_WITHIN&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_RIPEMD160&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_SHA1&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_SHA256&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_HASH160&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_HASH256&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_CODESEPARATOR&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_CHECKSIG&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_CHECKSIGVERIFY&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_CHECKMULTISIG&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_CHECKMULTISIGVERIFY&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NOP1&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NOP2&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NOP3&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NOP4&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NOP5&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NOP6&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NOP7&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NOP8&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NOP9&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_NOP10&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_SMALLINTEGER&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_PUBKEYS&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_PUBKEYHASH&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_PUBKEY&#39;</span><span class="p">,</span>
+        <span class="s">&#39;OP_INVALIDOPCODE&#39;</span><span class="p">,</span>
+
+        <span class="s">&#39;OPCODES_BY_NAME&#39;</span><span class="p">,</span>
+        <span class="s">&#39;DISABLED_OPCODES&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CScriptInvalidError&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CScriptTruncatedPushDataError&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CScript&#39;</span><span class="p">,</span>
+        <span class="s">&#39;SCRIPT_VERIFY_P2SH&#39;</span><span class="p">,</span>
+        <span class="s">&#39;SCRIPT_VERIFY_STRICTENC&#39;</span><span class="p">,</span>
+        <span class="s">&#39;SCRIPT_VERIFY_EVEN_S&#39;</span><span class="p">,</span>
+        <span class="s">&#39;SCRIPT_VERIFY_NOCACHE&#39;</span><span class="p">,</span>
+        <span class="s">&#39;SIGHASH_ALL&#39;</span><span class="p">,</span>
+        <span class="s">&#39;SIGHASH_NONE&#39;</span><span class="p">,</span>
+        <span class="s">&#39;SIGHASH_SINGLE&#39;</span><span class="p">,</span>
+        <span class="s">&#39;SIGHASH_ANYONECANPAY&#39;</span><span class="p">,</span>
+        <span class="s">&#39;FindAndDelete&#39;</span><span class="p">,</span>
+        <span class="s">&#39;RawSignatureHash&#39;</span><span class="p">,</span>
+        <span class="s">&#39;SignatureHash&#39;</span><span class="p">,</span>
+        <span class="s">&#39;IsLowDERSignature&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../../bitcoin.html" >bitcoin</a> &raquo;</li>
+          <li class="nav-item nav-item-3"><a href="../core.html" >bitcoin.core</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2012-2015, The python-bitcoinlib developers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

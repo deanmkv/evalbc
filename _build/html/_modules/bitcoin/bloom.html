@@ -1,0 +1,285 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>bitcoin.bloom &mdash; python-bitcoinlib 0.5.1-SNAPSHOT documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.5.1-SNAPSHOT',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="python-bitcoinlib 0.5.1-SNAPSHOT documentation" href="../../index.html" />
+    <link rel="up" title="bitcoin" href="../bitcoin.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../bitcoin.html" accesskey="U">bitcoin</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bitcoin.bloom</h1><div class="highlight"><pre>
+<span class="c"># Copyright (C) 2013-2014 The python-bitcoinlib developers</span>
+<span class="c">#</span>
+<span class="c"># This file is part of python-bitcoinlib.</span>
+<span class="c">#</span>
+<span class="c"># It is subject to the license terms in the LICENSE file found in the top-level</span>
+<span class="c"># directory of this distribution.</span>
+<span class="c">#</span>
+<span class="c"># No part of python-bitcoinlib, including this file, may be copied, modified,</span>
+<span class="c"># propagated, or distributed except according to the terms contained in the</span>
+<span class="c"># LICENSE file.</span>
+
+<span class="sd">&quot;&quot;&quot;Bloom filter support&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">import</span> <span class="nn">bitcoin.core</span>
+<span class="kn">import</span> <span class="nn">bitcoin.core.serialize</span>
+
+<span class="k">def</span> <span class="nf">_ROTL32</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="mh">0xFFFFFFFF</span>
+    <span class="k">return</span> <span class="p">((</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="n">r</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">x</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">32</span> <span class="o">-</span> <span class="n">r</span><span class="p">))</span>
+
+<div class="viewcode-block" id="MurmurHash3"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.bloom.MurmurHash3">[docs]</a><span class="k">def</span> <span class="nf">MurmurHash3</span><span class="p">(</span><span class="n">nHashSeed</span><span class="p">,</span> <span class="n">vDataToHash</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;MurmurHash3 (x86_32)</span>
+
+<span class="sd">    Used for bloom filters. See http://code.google.com/p/smhasher/source/browse/trunk/MurmurHash3.cpp</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="n">nHashSeed</span> <span class="o">&lt;=</span> <span class="mh">0xFFFFFFFF</span>
+
+    <span class="n">h1</span> <span class="o">=</span> <span class="n">nHashSeed</span>
+    <span class="n">c1</span> <span class="o">=</span> <span class="mh">0xcc9e2d51</span>
+    <span class="n">c2</span> <span class="o">=</span> <span class="mh">0x1b873593</span>
+
+    <span class="c"># body</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">vDataToHash</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">vDataToHash</span><span class="p">)</span> <span class="o">%</span> <span class="mi">4</span> \
+          <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">vDataToHash</span><span class="p">)</span> <span class="o">-</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">4</span><span class="p">:</span>
+
+        <span class="n">k1</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;L&quot;</span><span class="p">,</span> <span class="n">vDataToHash</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">4</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">k1</span> <span class="o">=</span> <span class="p">(</span><span class="n">k1</span> <span class="o">*</span> <span class="n">c1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span>
+        <span class="n">k1</span> <span class="o">=</span> <span class="n">_ROTL32</span><span class="p">(</span><span class="n">k1</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+        <span class="n">k1</span> <span class="o">=</span> <span class="p">(</span><span class="n">k1</span> <span class="o">*</span> <span class="n">c2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span>
+
+        <span class="n">h1</span> <span class="o">^=</span> <span class="n">k1</span>
+        <span class="n">h1</span> <span class="o">=</span> <span class="n">_ROTL32</span><span class="p">(</span><span class="n">h1</span><span class="p">,</span> <span class="mi">13</span><span class="p">)</span>
+        <span class="n">h1</span> <span class="o">=</span> <span class="p">(((</span><span class="n">h1</span><span class="o">*</span><span class="mi">5</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span><span class="p">)</span> <span class="o">+</span> <span class="mh">0xe6546b64</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span>
+
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">4</span>
+
+    <span class="c"># tail</span>
+    <span class="n">k1</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">vDataToHash</span><span class="p">)</span> <span class="o">//</span> <span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="n">bord</span> <span class="o">=</span> <span class="nb">ord</span>
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;</span> <span class="s">&#39;3&#39;</span><span class="p">:</span>
+        <span class="c"># In Py3 indexing bytes returns numbers, not characters</span>
+        <span class="n">bord</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">vDataToHash</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">3</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">k1</span> <span class="o">^=</span> <span class="n">bord</span><span class="p">(</span><span class="n">vDataToHash</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">2</span><span class="p">])</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">vDataToHash</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">3</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">k1</span> <span class="o">^=</span> <span class="n">bord</span><span class="p">(</span><span class="n">vDataToHash</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">vDataToHash</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">3</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">k1</span> <span class="o">^=</span> <span class="n">bord</span><span class="p">(</span><span class="n">vDataToHash</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+    <span class="n">k1</span> <span class="o">&amp;=</span> <span class="mh">0xFFFFFFFF</span>
+    <span class="n">k1</span> <span class="o">=</span> <span class="p">(</span><span class="n">k1</span> <span class="o">*</span> <span class="n">c1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span>
+    <span class="n">k1</span> <span class="o">=</span> <span class="n">_ROTL32</span><span class="p">(</span><span class="n">k1</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+    <span class="n">k1</span> <span class="o">=</span> <span class="p">(</span><span class="n">k1</span> <span class="o">*</span> <span class="n">c2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span>
+    <span class="n">h1</span> <span class="o">^=</span> <span class="n">k1</span>
+
+    <span class="c"># finalization</span>
+    <span class="n">h1</span> <span class="o">^=</span> <span class="nb">len</span><span class="p">(</span><span class="n">vDataToHash</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span>
+    <span class="n">h1</span> <span class="o">^=</span> <span class="p">(</span><span class="n">h1</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span>
+    <span class="n">h1</span> <span class="o">*=</span> <span class="mh">0x85ebca6b</span>
+    <span class="n">h1</span> <span class="o">^=</span> <span class="p">(</span><span class="n">h1</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">13</span>
+    <span class="n">h1</span> <span class="o">*=</span> <span class="mh">0xc2b2ae35</span>
+    <span class="n">h1</span> <span class="o">^=</span> <span class="p">(</span><span class="n">h1</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span>
+
+    <span class="k">return</span> <span class="n">h1</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span>
+
+</div>
+<div class="viewcode-block" id="CBloomFilter"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.bloom.CBloomFilter">[docs]</a><span class="k">class</span> <span class="nc">CBloomFilter</span><span class="p">(</span><span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">Serializable</span><span class="p">):</span>
+    <span class="c"># 20,000 items with fp rate &lt; 0.1% or 10,000 items and &lt;0.0001%</span>
+    <span class="n">MAX_BLOOM_FILTER_SIZE</span> <span class="o">=</span> <span class="mi">36000</span>
+    <span class="n">MAX_HASH_FUNCS</span> <span class="o">=</span> <span class="mi">50</span>
+
+    <span class="n">UPDATE_NONE</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">UPDATE_ALL</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">UPDATE_P2PUBKEY_ONLY</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">UPDATE_MASK</span> <span class="o">=</span> <span class="mi">3</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nElements</span><span class="p">,</span> <span class="n">nFPRate</span><span class="p">,</span> <span class="n">nTweak</span><span class="p">,</span> <span class="n">nFlags</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a new bloom filter</span>
+
+<span class="sd">        The filter will have a given false-positive rate when filled with the</span>
+<span class="sd">        given number of elements.</span>
+
+<span class="sd">        Note that if the given parameters will result in a filter outside the</span>
+<span class="sd">        bounds of the protocol limits, the filter created will be as close to</span>
+<span class="sd">        the given parameters as possible within the protocol limits. This will</span>
+<span class="sd">        apply if nFPRate is very low or nElements is unreasonably high.</span>
+
+<span class="sd">        nTweak is a constant which is added to the seed value passed to the</span>
+<span class="sd">        hash function It should generally always be a random value (and is</span>
+<span class="sd">        largely only exposed for unit testing)</span>
+
+<span class="sd">        nFlags should be one of the UPDATE_* enums (but not _MASK)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">LN2SQUARED</span> <span class="o">=</span> <span class="mf">0.4804530139182014246671025263266649717305529515945455</span>
+        <span class="n">LN2</span> <span class="o">=</span> <span class="mf">0.6931471805599453094172321214581765680755001343602552</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vData</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span>  <span class="o">/</span> <span class="n">LN2SQUARED</span> <span class="o">*</span> <span class="n">nElements</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">nFPRate</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_BLOOM_FILTER_SIZE</span> <span class="o">*</span> <span class="mi">8</span><span class="p">)</span> <span class="o">/</span> <span class="mi">8</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nHashFuncs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vData</span><span class="p">)</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">/</span> <span class="n">nElements</span> <span class="o">*</span> <span class="n">LN2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_HASH_FUNCS</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nTweak</span> <span class="o">=</span> <span class="n">nTweak</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nFlags</span> <span class="o">=</span> <span class="n">nFlags</span>
+
+<div class="viewcode-block" id="CBloomFilter.bloom_hash"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.bloom.CBloomFilter.bloom_hash">[docs]</a>    <span class="k">def</span> <span class="nf">bloom_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nHashNum</span><span class="p">,</span> <span class="n">vDataToHash</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">MurmurHash3</span><span class="p">(((</span><span class="n">nHashNum</span> <span class="o">*</span> <span class="mh">0xFBA4C795</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">nTweak</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span><span class="p">,</span> <span class="n">vDataToHash</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vData</span><span class="p">)</span> <span class="o">*</span> <span class="mi">8</span><span class="p">)</span>
+</div>
+    <span class="n">__bit_mask</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">([</span><span class="mh">0x01</span><span class="p">,</span> <span class="mh">0x02</span><span class="p">,</span> <span class="mh">0x04</span><span class="p">,</span> <span class="mh">0x08</span><span class="p">,</span> <span class="mh">0x10</span><span class="p">,</span> <span class="mh">0x20</span><span class="p">,</span> <span class="mh">0x40</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">])</span>
+<div class="viewcode-block" id="CBloomFilter.insert"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.bloom.CBloomFilter.insert">[docs]</a>    <span class="k">def</span> <span class="nf">insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elem</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Insert an element in the filter.</span>
+
+<span class="sd">        elem may be a COutPoint or bytes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">COutPoint</span><span class="p">):</span>
+            <span class="n">elem</span> <span class="o">=</span> <span class="n">elem</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vData</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">vData</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mh">0xff</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nHashFuncs</span><span class="p">):</span>
+            <span class="n">nIndex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bloom_hash</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">elem</span><span class="p">)</span>
+            <span class="c"># Sets bit nIndex of vData</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vData</span><span class="p">[</span><span class="n">nIndex</span> <span class="o">&gt;&gt;</span> <span class="mi">3</span><span class="p">]</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__bit_mask</span><span class="p">[</span><span class="mi">7</span> <span class="o">&amp;</span> <span class="n">nIndex</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="CBloomFilter.contains"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.bloom.CBloomFilter.contains">[docs]</a>    <span class="k">def</span> <span class="nf">contains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elem</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Test if the filter contains an element</span>
+
+<span class="sd">        elem may be a COutPoint or bytes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">COutPoint</span><span class="p">):</span>
+            <span class="n">elem</span> <span class="o">=</span> <span class="n">elem</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vData</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">vData</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mh">0xff</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nHashFuncs</span><span class="p">):</span>
+            <span class="n">nIndex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bloom_hash</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">elem</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vData</span><span class="p">[</span><span class="n">nIndex</span> <span class="o">&gt;&gt;</span> <span class="mi">3</span><span class="p">]</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">__bit_mask</span><span class="p">[</span><span class="mi">7</span> <span class="o">&amp;</span> <span class="n">nIndex</span><span class="p">]):</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="CBloomFilter.IsWithinSizeConstraints"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.bloom.CBloomFilter.IsWithinSizeConstraints">[docs]</a>    <span class="k">def</span> <span class="nf">IsWithinSizeConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vData</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_BLOOM_FILTER_SIZE</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">nHashFuncs</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_HASH_FUNCS</span>
+</div>
+<div class="viewcode-block" id="CBloomFilter.IsRelevantAndUpdate"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.bloom.CBloomFilter.IsRelevantAndUpdate">[docs]</a>    <span class="k">def</span> <span class="nf">IsRelevantAndUpdate</span><span class="p">(</span><span class="n">tx</span><span class="p">,</span> <span class="n">tx_hash</span><span class="p">):</span>
+        <span class="c"># Not useful for a client, so not implemented yet.</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+    <span class="n">__struct</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">Struct</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;&lt;IIB&#39;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="CBloomFilter.stream_deserialize"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.bloom.CBloomFilter.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">vData</span> <span class="o">=</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">BytesSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">nHashFuncs</span><span class="p">,</span>
+         <span class="n">nTweak</span><span class="p">,</span>
+         <span class="n">nFlags</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">_ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__struct</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+        <span class="bp">self</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vData</span> <span class="o">=</span> <span class="n">vData</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nHashFuncs</span> <span class="o">=</span> <span class="n">nHashFuncs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nTweak</span> <span class="o">=</span> <span class="n">nTweak</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nFlags</span> <span class="o">=</span> <span class="n">nFlags</span>
+        <span class="k">return</span> <span class="bp">self</span>
+</div>
+<div class="viewcode-block" id="CBloomFilter.stream_serialize"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.bloom.CBloomFilter.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;</span> <span class="s">&#39;3&#39;</span><span class="p">:</span>
+            <span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">BytesSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vData</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># 2.7 has problems with f.write(bytearray())</span>
+            <span class="n">bitcoin</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">BytesSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vData</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nHashFuncs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nTweak</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nFlags</span><span class="p">))</span>
+</div></div>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s">&#39;MurmurHash3&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CBloomFilter&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../bitcoin.html" >bitcoin</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2012-2015, The python-bitcoinlib developers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,1359 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>bitcoin &mdash; python-bitcoinlib 0.5.1-SNAPSHOT documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.5.1-SNAPSHOT',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="python-bitcoinlib 0.5.1-SNAPSHOT documentation" href="index.html" />
+    <link rel="next" title="bitcoin.core" href="bitcoin.core.html" />
+    <link rel="prev" title="python-bitcoinlib Documentation" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="bitcoin.core.html" title="bitcoin.core"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="python-bitcoinlib Documentation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="bitcoin">
+<h1>bitcoin<a class="headerlink" href="#bitcoin" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="id1">
+<h2><a class="reference internal" href="#module-bitcoin" title="bitcoin"><code class="xref py py-mod docutils literal"><span class="pre">bitcoin</span></code></a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-bitcoin"></span><dl class="class">
+<dt id="bitcoin.MainParams">
+<em class="property">class </em><code class="descclassname">bitcoin.</code><code class="descname">MainParams</code><a class="reference internal" href="_modules/bitcoin.html#MainParams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.MainParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="bitcoin.core.html#bitcoin.core.CoreMainParams" title="bitcoin.core.CoreMainParams"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.CoreMainParams</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.MainParams.BASE58_PREFIXES">
+<code class="descname">BASE58_PREFIXES</code><em class="property"> = {u'SECRET_KEY': 128, u'SCRIPT_ADDR': 5, u'PUBKEY_ADDR': 0}</em><a class="headerlink" href="#bitcoin.MainParams.BASE58_PREFIXES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.MainParams.DEFAULT_PORT">
+<code class="descname">DEFAULT_PORT</code><em class="property"> = 8333</em><a class="headerlink" href="#bitcoin.MainParams.DEFAULT_PORT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.MainParams.DNS_SEEDS">
+<code class="descname">DNS_SEEDS</code><em class="property"> = ((u'bitcoin.sipa.be', u'seed.bitcoin.sipa.be'), (u'bluematt.me', u'dnsseed.bluematt.me'), (u'dashjr.org', u'dnsseed.bitcoin.dashjr.org'), (u'bitcoinstats.com', u'seed.bitcoinstats.com'), (u'xf2.org', u'bitseed.xf2.org'))</em><a class="headerlink" href="#bitcoin.MainParams.DNS_SEEDS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.MainParams.MESSAGE_START">
+<code class="descname">MESSAGE_START</code><em class="property"> = '\xf9\xbe\xb4\xd9'</em><a class="headerlink" href="#bitcoin.MainParams.MESSAGE_START" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.MainParams.RPC_PORT">
+<code class="descname">RPC_PORT</code><em class="property"> = 8332</em><a class="headerlink" href="#bitcoin.MainParams.RPC_PORT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.RegTestParams">
+<em class="property">class </em><code class="descclassname">bitcoin.</code><code class="descname">RegTestParams</code><a class="reference internal" href="_modules/bitcoin.html#RegTestParams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.RegTestParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="bitcoin.core.html#bitcoin.core.CoreRegTestParams" title="bitcoin.core.CoreRegTestParams"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.CoreRegTestParams</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.RegTestParams.BASE58_PREFIXES">
+<code class="descname">BASE58_PREFIXES</code><em class="property"> = {u'SECRET_KEY': 239, u'SCRIPT_ADDR': 196, u'PUBKEY_ADDR': 111}</em><a class="headerlink" href="#bitcoin.RegTestParams.BASE58_PREFIXES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.RegTestParams.DEFAULT_PORT">
+<code class="descname">DEFAULT_PORT</code><em class="property"> = 18444</em><a class="headerlink" href="#bitcoin.RegTestParams.DEFAULT_PORT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.RegTestParams.DNS_SEEDS">
+<code class="descname">DNS_SEEDS</code><em class="property"> = ()</em><a class="headerlink" href="#bitcoin.RegTestParams.DNS_SEEDS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.RegTestParams.MESSAGE_START">
+<code class="descname">MESSAGE_START</code><em class="property"> = '\xfa\xbf\xb5\xda'</em><a class="headerlink" href="#bitcoin.RegTestParams.MESSAGE_START" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.RegTestParams.RPC_PORT">
+<code class="descname">RPC_PORT</code><em class="property"> = 18332</em><a class="headerlink" href="#bitcoin.RegTestParams.RPC_PORT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.SelectParams">
+<code class="descclassname">bitcoin.</code><code class="descname">SelectParams</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin.html#SelectParams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.SelectParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Select the chain parameters to use</p>
+<p>name is one of &#8216;mainnet&#8217;, &#8216;testnet&#8217;, or &#8216;regtest&#8217;</p>
+<p>Default chain is &#8216;mainnet&#8217;</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.TestNetParams">
+<em class="property">class </em><code class="descclassname">bitcoin.</code><code class="descname">TestNetParams</code><a class="reference internal" href="_modules/bitcoin.html#TestNetParams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.TestNetParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="bitcoin.core.html#bitcoin.core.CoreTestNetParams" title="bitcoin.core.CoreTestNetParams"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.CoreTestNetParams</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.TestNetParams.BASE58_PREFIXES">
+<code class="descname">BASE58_PREFIXES</code><em class="property"> = {u'SECRET_KEY': 239, u'SCRIPT_ADDR': 196, u'PUBKEY_ADDR': 111}</em><a class="headerlink" href="#bitcoin.TestNetParams.BASE58_PREFIXES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.TestNetParams.DEFAULT_PORT">
+<code class="descname">DEFAULT_PORT</code><em class="property"> = 18333</em><a class="headerlink" href="#bitcoin.TestNetParams.DEFAULT_PORT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.TestNetParams.DNS_SEEDS">
+<code class="descname">DNS_SEEDS</code><em class="property"> = ((u'bitcoin.petertodd.org', u'testnet-seed.bitcoin.petertodd.org'), (u'bluematt.me', u'testnet-seed.bluematt.me'))</em><a class="headerlink" href="#bitcoin.TestNetParams.DNS_SEEDS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.TestNetParams.MESSAGE_START">
+<code class="descname">MESSAGE_START</code><em class="property"> = '\x0b\x11\t\x07'</em><a class="headerlink" href="#bitcoin.TestNetParams.MESSAGE_START" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.TestNetParams.RPC_PORT">
+<code class="descname">RPC_PORT</code><em class="property"> = 18332</em><a class="headerlink" href="#bitcoin.TestNetParams.RPC_PORT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-bitcoin.base58">
+<span id="base58"></span><h2><code class="xref py py-mod docutils literal"><span class="pre">base58</span></code><a class="headerlink" href="#module-bitcoin.base58" title="Permalink to this headline">¶</a></h2>
+<p>Base58 encoding and decoding</p>
+<dl class="exception">
+<dt id="bitcoin.base58.Base58Error">
+<em class="property">exception </em><code class="descclassname">bitcoin.base58.</code><code class="descname">Base58Error</code><a class="reference internal" href="_modules/bitcoin/base58.html#Base58Error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.base58.Base58Error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.base58.InvalidBase58Error">
+<em class="property">exception </em><code class="descclassname">bitcoin.base58.</code><code class="descname">InvalidBase58Error</code><a class="reference internal" href="_modules/bitcoin/base58.html#InvalidBase58Error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.base58.InvalidBase58Error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.base58.Base58Error" title="bitcoin.base58.Base58Error"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.base58.Base58Error</span></code></a></p>
+<p>Raised on generic invalid base58 data, such as bad characters.</p>
+<p>Checksum failures raise Base58ChecksumError specifically.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.base58.encode">
+<code class="descclassname">bitcoin.base58.</code><code class="descname">encode</code><span class="sig-paren">(</span><em>b</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/base58.html#encode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.base58.encode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encode bytes to a base58-encoded string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.base58.decode">
+<code class="descclassname">bitcoin.base58.</code><code class="descname">decode</code><span class="sig-paren">(</span><em>s</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/base58.html#decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.base58.decode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decode a base58-encoding string, returning bytes</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.base58.Base58ChecksumError">
+<em class="property">exception </em><code class="descclassname">bitcoin.base58.</code><code class="descname">Base58ChecksumError</code><a class="reference internal" href="_modules/bitcoin/base58.html#Base58ChecksumError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.base58.Base58ChecksumError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.base58.Base58Error" title="bitcoin.base58.Base58Error"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.base58.Base58Error</span></code></a></p>
+<p>Raised on Base58 checksum errors</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.base58.CBase58Data">
+<em class="property">class </em><code class="descclassname">bitcoin.base58.</code><code class="descname">CBase58Data</code><span class="sig-paren">(</span><em>s</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/base58.html#CBase58Data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.base58.CBase58Data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">str</span></code></p>
+<p>Base58-encoded data</p>
+<p>Includes a version and checksum.</p>
+<p>Initialize from base58-encoded string</p>
+<p>Note: subclasses put your initialization routines here, but ignore the
+argument - that&#8217;s handled by __new__(), and .from_bytes() will call
+__init__() with None in place of the string.</p>
+<dl class="classmethod">
+<dt id="bitcoin.base58.CBase58Data.from_bytes">
+<em class="property">classmethod </em><code class="descname">from_bytes</code><span class="sig-paren">(</span><em>data</em>, <em>nVersion</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/base58.html#CBase58Data.from_bytes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.base58.CBase58Data.from_bytes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiate from data and nVersion</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.base58.CBase58Data.to_bytes">
+<code class="descname">to_bytes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/base58.html#CBase58Data.to_bytes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.base58.CBase58Data.to_bytes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert to bytes instance</p>
+<p>Note that it&#8217;s the data represented that is converted; the checkum and
+nVersion is not included.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-bitcoin.bloom">
+<span id="bloom"></span><h2><code class="xref py py-mod docutils literal"><span class="pre">bloom</span></code><a class="headerlink" href="#module-bitcoin.bloom" title="Permalink to this headline">¶</a></h2>
+<p>Bloom filter support</p>
+<dl class="function">
+<dt id="bitcoin.bloom.MurmurHash3">
+<code class="descclassname">bitcoin.bloom.</code><code class="descname">MurmurHash3</code><span class="sig-paren">(</span><em>x86_32</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/bloom.html#MurmurHash3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.bloom.MurmurHash3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used for bloom filters. See <a class="reference external" href="http://code.google.com/p/smhasher/source/browse/trunk/MurmurHash3.cpp">http://code.google.com/p/smhasher/source/browse/trunk/MurmurHash3.cpp</a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.bloom.CBloomFilter">
+<em class="property">class </em><code class="descclassname">bitcoin.bloom.</code><code class="descname">CBloomFilter</code><span class="sig-paren">(</span><em>nElements</em>, <em>nFPRate</em>, <em>nTweak</em>, <em>nFlags</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/bloom.html#CBloomFilter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.bloom.CBloomFilter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="bitcoin.core.html#bitcoin.core.serialize.Serializable" title="bitcoin.core.serialize.Serializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.Serializable</span></code></a></p>
+<p>Create a new bloom filter</p>
+<p>The filter will have a given false-positive rate when filled with the
+given number of elements.</p>
+<p>Note that if the given parameters will result in a filter outside the
+bounds of the protocol limits, the filter created will be as close to
+the given parameters as possible within the protocol limits. This will
+apply if nFPRate is very low or nElements is unreasonably high.</p>
+<p>nTweak is a constant which is added to the seed value passed to the
+hash function It should generally always be a random value (and is
+largely only exposed for unit testing)</p>
+<p>nFlags should be one of the UPDATE_* enums (but not _MASK)</p>
+<dl class="method">
+<dt id="bitcoin.bloom.CBloomFilter.IsRelevantAndUpdate">
+<code class="descname">IsRelevantAndUpdate</code><span class="sig-paren">(</span><em>tx</em>, <em>tx_hash</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/bloom.html#CBloomFilter.IsRelevantAndUpdate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.bloom.CBloomFilter.IsRelevantAndUpdate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.bloom.CBloomFilter.IsWithinSizeConstraints">
+<code class="descname">IsWithinSizeConstraints</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/bloom.html#CBloomFilter.IsWithinSizeConstraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.bloom.CBloomFilter.IsWithinSizeConstraints" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.bloom.CBloomFilter.MAX_BLOOM_FILTER_SIZE">
+<code class="descname">MAX_BLOOM_FILTER_SIZE</code><em class="property"> = 36000</em><a class="headerlink" href="#bitcoin.bloom.CBloomFilter.MAX_BLOOM_FILTER_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.bloom.CBloomFilter.MAX_HASH_FUNCS">
+<code class="descname">MAX_HASH_FUNCS</code><em class="property"> = 50</em><a class="headerlink" href="#bitcoin.bloom.CBloomFilter.MAX_HASH_FUNCS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.bloom.CBloomFilter.UPDATE_ALL">
+<code class="descname">UPDATE_ALL</code><em class="property"> = 1</em><a class="headerlink" href="#bitcoin.bloom.CBloomFilter.UPDATE_ALL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.bloom.CBloomFilter.UPDATE_MASK">
+<code class="descname">UPDATE_MASK</code><em class="property"> = 3</em><a class="headerlink" href="#bitcoin.bloom.CBloomFilter.UPDATE_MASK" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.bloom.CBloomFilter.UPDATE_NONE">
+<code class="descname">UPDATE_NONE</code><em class="property"> = 0</em><a class="headerlink" href="#bitcoin.bloom.CBloomFilter.UPDATE_NONE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.bloom.CBloomFilter.UPDATE_P2PUBKEY_ONLY">
+<code class="descname">UPDATE_P2PUBKEY_ONLY</code><em class="property"> = 2</em><a class="headerlink" href="#bitcoin.bloom.CBloomFilter.UPDATE_P2PUBKEY_ONLY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.bloom.CBloomFilter.bloom_hash">
+<code class="descname">bloom_hash</code><span class="sig-paren">(</span><em>nHashNum</em>, <em>vDataToHash</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/bloom.html#CBloomFilter.bloom_hash"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.bloom.CBloomFilter.bloom_hash" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.bloom.CBloomFilter.contains">
+<code class="descname">contains</code><span class="sig-paren">(</span><em>elem</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/bloom.html#CBloomFilter.contains"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.bloom.CBloomFilter.contains" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if the filter contains an element</p>
+<p>elem may be a COutPoint or bytes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.bloom.CBloomFilter.insert">
+<code class="descname">insert</code><span class="sig-paren">(</span><em>elem</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/bloom.html#CBloomFilter.insert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.bloom.CBloomFilter.insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Insert an element in the filter.</p>
+<p>elem may be a COutPoint or bytes</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.bloom.CBloomFilter.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/bloom.html#CBloomFilter.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.bloom.CBloomFilter.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.bloom.CBloomFilter.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/bloom.html#CBloomFilter.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.bloom.CBloomFilter.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-bitcoin.messages">
+<span id="messages"></span><h2><code class="xref py py-mod docutils literal"><span class="pre">messages</span></code><a class="headerlink" href="#module-bitcoin.messages" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="bitcoin.messages.MsgSerializable">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">MsgSerializable</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#MsgSerializable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.MsgSerializable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="bitcoin.core.html#bitcoin.core.serialize.Serializable" title="bitcoin.core.serialize.Serializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.Serializable</span></code></a></p>
+<dl class="classmethod">
+<dt id="bitcoin.messages.MsgSerializable.from_bytes">
+<em class="property">classmethod </em><code class="descname">from_bytes</code><span class="sig-paren">(</span><em>b</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#MsgSerializable.from_bytes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.MsgSerializable.from_bytes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.MsgSerializable.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#MsgSerializable.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.MsgSerializable.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.MsgSerializable.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#MsgSerializable.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.MsgSerializable.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.MsgSerializable.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#MsgSerializable.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.MsgSerializable.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.MsgSerializable.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#MsgSerializable.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.MsgSerializable.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.MsgSerializable.to_bytes">
+<code class="descname">to_bytes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#MsgSerializable.to_bytes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.MsgSerializable.to_bytes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.messages.msg_version">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">msg_version</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_version"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.messages.MsgSerializable" title="bitcoin.messages.MsgSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.messages.MsgSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.messages.msg_version.command">
+<code class="descname">command</code><em class="property"> = 'version'</em><a class="headerlink" href="#bitcoin.messages.msg_version.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.msg_version.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_version.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_version.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.msg_version.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_version.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_version.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.messages.msg_verack">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">msg_verack</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_verack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_verack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.messages.MsgSerializable" title="bitcoin.messages.MsgSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.messages.MsgSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.messages.msg_verack.command">
+<code class="descname">command</code><em class="property"> = 'verack'</em><a class="headerlink" href="#bitcoin.messages.msg_verack.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.msg_verack.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_verack.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_verack.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.msg_verack.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_verack.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_verack.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.messages.msg_addr">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">msg_addr</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_addr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_addr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.messages.MsgSerializable" title="bitcoin.messages.MsgSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.messages.MsgSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.messages.msg_addr.command">
+<code class="descname">command</code><em class="property"> = 'addr'</em><a class="headerlink" href="#bitcoin.messages.msg_addr.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.msg_addr.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_addr.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_addr.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.msg_addr.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_addr.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_addr.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.messages.msg_alert">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">msg_alert</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_alert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_alert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.messages.MsgSerializable" title="bitcoin.messages.MsgSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.messages.MsgSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.messages.msg_alert.command">
+<code class="descname">command</code><em class="property"> = 'alert'</em><a class="headerlink" href="#bitcoin.messages.msg_alert.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.msg_alert.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_alert.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_alert.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.msg_alert.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_alert.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_alert.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.messages.msg_inv">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">msg_inv</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_inv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_inv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.messages.MsgSerializable" title="bitcoin.messages.MsgSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.messages.MsgSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.messages.msg_inv.command">
+<code class="descname">command</code><em class="property"> = 'inv'</em><a class="headerlink" href="#bitcoin.messages.msg_inv.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.msg_inv.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_inv.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_inv.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.msg_inv.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_inv.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_inv.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.messages.msg_getdata">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">msg_getdata</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_getdata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_getdata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.messages.MsgSerializable" title="bitcoin.messages.MsgSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.messages.MsgSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.messages.msg_getdata.command">
+<code class="descname">command</code><em class="property"> = 'getdata'</em><a class="headerlink" href="#bitcoin.messages.msg_getdata.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.msg_getdata.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_getdata.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_getdata.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.msg_getdata.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_getdata.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_getdata.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.messages.msg_getblocks">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">msg_getblocks</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_getblocks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_getblocks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.messages.MsgSerializable" title="bitcoin.messages.MsgSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.messages.MsgSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.messages.msg_getblocks.command">
+<code class="descname">command</code><em class="property"> = 'getblocks'</em><a class="headerlink" href="#bitcoin.messages.msg_getblocks.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.msg_getblocks.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_getblocks.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_getblocks.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.msg_getblocks.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_getblocks.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_getblocks.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.messages.msg_getheaders">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">msg_getheaders</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_getheaders"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_getheaders" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.messages.MsgSerializable" title="bitcoin.messages.MsgSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.messages.MsgSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.messages.msg_getheaders.command">
+<code class="descname">command</code><em class="property"> = 'getheaders'</em><a class="headerlink" href="#bitcoin.messages.msg_getheaders.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.msg_getheaders.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_getheaders.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_getheaders.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.msg_getheaders.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_getheaders.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_getheaders.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.messages.msg_headers">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">msg_headers</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_headers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.messages.MsgSerializable" title="bitcoin.messages.MsgSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.messages.MsgSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.messages.msg_headers.command">
+<code class="descname">command</code><em class="property"> = 'headers'</em><a class="headerlink" href="#bitcoin.messages.msg_headers.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.msg_headers.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_headers.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_headers.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.msg_headers.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_headers.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_headers.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.messages.msg_tx">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">msg_tx</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_tx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_tx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.messages.MsgSerializable" title="bitcoin.messages.MsgSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.messages.MsgSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.messages.msg_tx.command">
+<code class="descname">command</code><em class="property"> = 'tx'</em><a class="headerlink" href="#bitcoin.messages.msg_tx.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.msg_tx.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_tx.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_tx.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.msg_tx.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_tx.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_tx.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.messages.msg_block">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">msg_block</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_block"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_block" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.messages.MsgSerializable" title="bitcoin.messages.MsgSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.messages.MsgSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.messages.msg_block.command">
+<code class="descname">command</code><em class="property"> = 'block'</em><a class="headerlink" href="#bitcoin.messages.msg_block.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.msg_block.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_block.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_block.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.msg_block.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_block.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_block.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.messages.msg_getaddr">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">msg_getaddr</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_getaddr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_getaddr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.messages.MsgSerializable" title="bitcoin.messages.MsgSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.messages.MsgSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.messages.msg_getaddr.command">
+<code class="descname">command</code><em class="property"> = 'getaddr'</em><a class="headerlink" href="#bitcoin.messages.msg_getaddr.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.msg_getaddr.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_getaddr.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_getaddr.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.msg_getaddr.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_getaddr.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_getaddr.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.messages.msg_ping">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">msg_ping</code><span class="sig-paren">(</span><em>protover=60002</em>, <em>nonce=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_ping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_ping" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.messages.MsgSerializable" title="bitcoin.messages.MsgSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.messages.MsgSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.messages.msg_ping.command">
+<code class="descname">command</code><em class="property"> = 'ping'</em><a class="headerlink" href="#bitcoin.messages.msg_ping.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.msg_ping.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_ping.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_ping.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.msg_ping.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_ping.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_ping.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.messages.msg_pong">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">msg_pong</code><span class="sig-paren">(</span><em>protover=60002</em>, <em>nonce=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_pong"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_pong" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.messages.MsgSerializable" title="bitcoin.messages.MsgSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.messages.MsgSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.messages.msg_pong.command">
+<code class="descname">command</code><em class="property"> = 'pong'</em><a class="headerlink" href="#bitcoin.messages.msg_pong.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.msg_pong.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_pong.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_pong.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.msg_pong.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_pong.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_pong.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.messages.msg_mempool">
+<em class="property">class </em><code class="descclassname">bitcoin.messages.</code><code class="descname">msg_mempool</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_mempool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_mempool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.messages.MsgSerializable" title="bitcoin.messages.MsgSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.messages.MsgSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.messages.msg_mempool.command">
+<code class="descname">command</code><em class="property"> = 'mempool'</em><a class="headerlink" href="#bitcoin.messages.msg_mempool.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.messages.msg_mempool.msg_deser">
+<em class="property">classmethod </em><code class="descname">msg_deser</code><span class="sig-paren">(</span><em>f</em>, <em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_mempool.msg_deser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_mempool.msg_deser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.messages.msg_mempool.msg_ser">
+<code class="descname">msg_ser</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/messages.html#msg_mempool.msg_ser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.messages.msg_mempool.msg_ser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-bitcoin.net">
+<span id="net"></span><h2><code class="xref py py-mod docutils literal"><span class="pre">net</span></code><a class="headerlink" href="#module-bitcoin.net" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="bitcoin.net.CAddress">
+<em class="property">class </em><code class="descclassname">bitcoin.net.</code><code class="descname">CAddress</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/net.html#CAddress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.net.CAddress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="bitcoin.core.html#bitcoin.core.serialize.Serializable" title="bitcoin.core.serialize.Serializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.Serializable</span></code></a></p>
+<dl class="classmethod">
+<dt id="bitcoin.net.CAddress.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em>, <em>without_time=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/net.html#CAddress.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.net.CAddress.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.net.CAddress.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em>, <em>without_time=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/net.html#CAddress.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.net.CAddress.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.net.CInv">
+<em class="property">class </em><code class="descclassname">bitcoin.net.</code><code class="descname">CInv</code><a class="reference internal" href="_modules/bitcoin/net.html#CInv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.net.CInv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="bitcoin.core.html#bitcoin.core.serialize.Serializable" title="bitcoin.core.serialize.Serializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.Serializable</span></code></a></p>
+<dl class="classmethod">
+<dt id="bitcoin.net.CInv.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/net.html#CInv.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.net.CInv.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.net.CInv.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/net.html#CInv.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.net.CInv.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.net.CInv.typemap">
+<code class="descname">typemap</code><em class="property"> = {0: u'Error', 1: u'TX', 2: u'Block', 3: u'FilteredBlock'}</em><a class="headerlink" href="#bitcoin.net.CInv.typemap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.net.CBlockLocator">
+<em class="property">class </em><code class="descclassname">bitcoin.net.</code><code class="descname">CBlockLocator</code><span class="sig-paren">(</span><em>protover=60002</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/net.html#CBlockLocator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.net.CBlockLocator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="bitcoin.core.html#bitcoin.core.serialize.Serializable" title="bitcoin.core.serialize.Serializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.Serializable</span></code></a></p>
+<dl class="classmethod">
+<dt id="bitcoin.net.CBlockLocator.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/net.html#CBlockLocator.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.net.CBlockLocator.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.net.CBlockLocator.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/net.html#CBlockLocator.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.net.CBlockLocator.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.net.CUnsignedAlert">
+<em class="property">class </em><code class="descclassname">bitcoin.net.</code><code class="descname">CUnsignedAlert</code><a class="reference internal" href="_modules/bitcoin/net.html#CUnsignedAlert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.net.CUnsignedAlert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="bitcoin.core.html#bitcoin.core.serialize.Serializable" title="bitcoin.core.serialize.Serializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.Serializable</span></code></a></p>
+<dl class="classmethod">
+<dt id="bitcoin.net.CUnsignedAlert.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/net.html#CUnsignedAlert.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.net.CUnsignedAlert.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.net.CUnsignedAlert.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/net.html#CUnsignedAlert.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.net.CUnsignedAlert.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.net.CAlert">
+<em class="property">class </em><code class="descclassname">bitcoin.net.</code><code class="descname">CAlert</code><a class="reference internal" href="_modules/bitcoin/net.html#CAlert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.net.CAlert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="bitcoin.core.html#bitcoin.core.serialize.Serializable" title="bitcoin.core.serialize.Serializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.Serializable</span></code></a></p>
+<dl class="classmethod">
+<dt id="bitcoin.net.CAlert.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/net.html#CAlert.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.net.CAlert.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.net.CAlert.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/net.html#CAlert.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.net.CAlert.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-bitcoin.rpc">
+<span id="rpc"></span><h2><code class="xref py py-mod docutils literal"><span class="pre">rpc</span></code><a class="headerlink" href="#module-bitcoin.rpc" title="Permalink to this headline">¶</a></h2>
+<p>Bitcoin Core RPC support</p>
+<p>By default this uses the standard library <code class="docutils literal"><span class="pre">json</span></code> module. By monkey patching,
+a different implementation can be used instead, at your own risk:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">simplejson</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">bitcoin.rpc</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bitcoin</span><span class="o">.</span><span class="n">rpc</span><span class="o">.</span><span class="n">json</span> <span class="o">=</span> <span class="n">simplejson</span>
+</pre></div>
+</div>
+<p>(<code class="docutils literal"><span class="pre">simplejson</span></code> is the externally maintained version of the same module and
+thus better optimized but perhaps less stable.)</p>
+<dl class="exception">
+<dt id="bitcoin.rpc.JSONRPCError">
+<em class="property">exception </em><code class="descclassname">bitcoin.rpc.</code><code class="descname">JSONRPCError</code><span class="sig-paren">(</span><em>rpc_error</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#JSONRPCError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.JSONRPCError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<p>JSON-RPC protocol error</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.rpc.JSONRPCException">
+<code class="descclassname">bitcoin.rpc.</code><code class="descname">JSONRPCException</code><a class="headerlink" href="#bitcoin.rpc.JSONRPCException" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#bitcoin.rpc.JSONRPCError" title="bitcoin.rpc.JSONRPCError"><code class="xref py py-class docutils literal"><span class="pre">JSONRPCError</span></code></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.rpc.RawProxy">
+<em class="property">class </em><code class="descclassname">bitcoin.rpc.</code><code class="descname">RawProxy</code><span class="sig-paren">(</span><em>service_url=None</em>, <em>service_port=None</em>, <em>btc_conf_file=None</em>, <em>timeout=30</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#RawProxy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.RawProxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">bitcoin.rpc.BaseProxy</span></code></p>
+<p>Low-level proxy to a bitcoin JSON-RPC service</p>
+<p>Unlike <code class="docutils literal"><span class="pre">Proxy</span></code>, no conversion is done besides parsing JSON. As far as
+Python is concerned, you can call any method; <code class="docutils literal"><span class="pre">JSONRPCError</span></code> will be
+raised if the server does not recognize it.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.rpc.Proxy">
+<em class="property">class </em><code class="descclassname">bitcoin.rpc.</code><code class="descname">Proxy</code><span class="sig-paren">(</span><em>service_url=None</em>, <em>service_port=None</em>, <em>btc_conf_file=None</em>, <em>timeout=30</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">bitcoin.rpc.BaseProxy</span></code></p>
+<p>Proxy to a bitcoin RPC service</p>
+<p>Unlike <code class="docutils literal"><span class="pre">RawProxy</span></code>, data is passed as <code class="docutils literal"><span class="pre">bitcoin.core</span></code> objects or packed
+bytes, rather than JSON or hex strings. Not all methods are implemented
+yet; you can use <code class="docutils literal"><span class="pre">call</span></code> to access missing ones in a forward-compatible
+way. Assumes Bitcoin Core version &gt;= 0.9; older versions mostly work, but
+there are a few incompatibilities.</p>
+<p>Create a proxy object</p>
+<p>If <code class="docutils literal"><span class="pre">service_url</span></code> is not specified, the username and password are read
+out of the file <code class="docutils literal"><span class="pre">btc_conf_file</span></code>. If <code class="docutils literal"><span class="pre">btc_conf_file</span></code> is not
+specified, <code class="docutils literal"><span class="pre">~/.bitcoin/bitcoin.conf</span></code> or equivalent is used by
+default.  The default port is set according to the chain parameters in
+use: mainnet, testnet, or regtest.</p>
+<p>Usually no arguments to <code class="docutils literal"><span class="pre">Proxy()</span></code> are needed; the local bitcoind will
+be used.</p>
+<p><code class="docutils literal"><span class="pre">timeout</span></code> - timeout in seconds before the HTTP interface times out</p>
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.addnode">
+<code class="descname">addnode</code><span class="sig-paren">(</span><em>node</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.addnode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.addnode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.addnodeonetry">
+<code class="descname">addnodeonetry</code><span class="sig-paren">(</span><em>node</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.addnodeonetry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.addnodeonetry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.call">
+<code class="descname">call</code><span class="sig-paren">(</span><em>service_name</em>, <em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.call" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call an RPC method by name and raw (JSON encodable) arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.dumpprivkey">
+<code class="descname">dumpprivkey</code><span class="sig-paren">(</span><em>addr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.dumpprivkey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.dumpprivkey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the private key matching an address</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.fundrawtransaction">
+<code class="descname">fundrawtransaction</code><span class="sig-paren">(</span><em>tx</em>, <em>include_watching=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.fundrawtransaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.fundrawtransaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add inputs to a transaction until it has enough in value to meet its out value.</p>
+<p>include_watching - Also select inputs which are watch only</p>
+<p>Returns dict:</p>
+<dl class="docutils">
+<dt>{&#8216;tx&#8217;:        Resulting tx,</dt>
+<dd>&#8216;fee&#8217;:       Fee the resulting transaction pays,
+&#8216;changepos&#8217;: Position of added change output, or -1,</dd>
+</dl>
+<p>}</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.generate">
+<code class="descname">generate</code><span class="sig-paren">(</span><em>numblocks</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.generate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mine blocks immediately (before the RPC call returns)</p>
+<p>numblocks - How many blocks are generated immediately.</p>
+<p>Returns iterable of block hashes generated.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.getaccountaddress">
+<code class="descname">getaccountaddress</code><span class="sig-paren">(</span><em>account=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.getaccountaddress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.getaccountaddress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the current Bitcoin address for receiving payments to this
+account.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.getbalance">
+<code class="descname">getbalance</code><span class="sig-paren">(</span><em>account=u'*'</em>, <em>minconf=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.getbalance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.getbalance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the balance</p>
+<p>account - The selected account. Defaults to &#8220;*&#8221; for entire wallet. It
+may be the default account using &#8220;&#8221;.</p>
+<p>minconf - Only include transactions confirmed at least this many times.
+(default=1)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.getbestblockhash">
+<code class="descname">getbestblockhash</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.getbestblockhash"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.getbestblockhash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return hash of best (tip) block in longest block chain.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.getblock">
+<code class="descname">getblock</code><span class="sig-paren">(</span><em>block_hash</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.getblock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.getblock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get block &lt;block_hash&gt;</p>
+<p>Raises IndexError if block_hash is not valid.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.getblockcount">
+<code class="descname">getblockcount</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.getblockcount"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.getblockcount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of blocks in the longest block chain</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.getblockhash">
+<code class="descname">getblockhash</code><span class="sig-paren">(</span><em>height</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.getblockhash"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.getblockhash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return hash of block in best-block-chain at height.</p>
+<p>Raises IndexError if height is not valid.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.getinfo">
+<code class="descname">getinfo</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.getinfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.getinfo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a JSON object containing various state info</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.getmininginfo">
+<code class="descname">getmininginfo</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.getmininginfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.getmininginfo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a JSON object containing mining-related information</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.getnewaddress">
+<code class="descname">getnewaddress</code><span class="sig-paren">(</span><em>account=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.getnewaddress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.getnewaddress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new Bitcoin address for receiving payments.</p>
+<p>If account is not None, it is added to the address book so payments
+received with the address will be credited to account.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.getrawchangeaddress">
+<code class="descname">getrawchangeaddress</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.getrawchangeaddress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.getrawchangeaddress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new Bitcoin address, for receiving change.</p>
+<p>This is for use with raw transactions, NOT normal use.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.getrawmempool">
+<code class="descname">getrawmempool</code><span class="sig-paren">(</span><em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.getrawmempool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.getrawmempool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the mempool</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.getrawtransaction">
+<code class="descname">getrawtransaction</code><span class="sig-paren">(</span><em>txid</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.getrawtransaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.getrawtransaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return transaction with hash txid</p>
+<p>Raises IndexError if transaction not found.</p>
+<p>verbose - If true a dict is returned instead with additional
+information on the transaction.</p>
+<p>Note that if all txouts are spent and the transaction index is not
+enabled the transaction may not be available.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.getreceivedbyaddress">
+<code class="descname">getreceivedbyaddress</code><span class="sig-paren">(</span><em>addr</em>, <em>minconf=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.getreceivedbyaddress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.getreceivedbyaddress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return total amount received by given a (wallet) address</p>
+<p>Get the amount received by &lt;address&gt; in transactions with at least
+[minconf] confirmations.</p>
+<p>Works only for addresses in the local wallet; other addresses will
+always show zero.</p>
+<p>addr    - The address. (CBitcoinAddress instance)</p>
+<p>minconf - Only include transactions confirmed at least this many times.
+(default=1)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.gettransaction">
+<code class="descname">gettransaction</code><span class="sig-paren">(</span><em>txid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.gettransaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.gettransaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get detailed information about in-wallet transaction txid</p>
+<p>Raises IndexError if transaction not found in the wallet.</p>
+<p>FIXME: Returned data types are not yet converted.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.gettxout">
+<code class="descname">gettxout</code><span class="sig-paren">(</span><em>outpoint</em>, <em>includemempool=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.gettxout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.gettxout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return details about an unspent transaction output.</p>
+<p>Raises IndexError if outpoint is not found or was spent.</p>
+<p>includemempool - Include mempool txouts</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.importaddress">
+<code class="descname">importaddress</code><span class="sig-paren">(</span><em>addr</em>, <em>label=u''</em>, <em>rescan=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.importaddress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.importaddress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an address or pubkey to wallet without the associated privkey.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.listunspent">
+<code class="descname">listunspent</code><span class="sig-paren">(</span><em>minconf=0</em>, <em>maxconf=9999999</em>, <em>addrs=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.listunspent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.listunspent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return unspent transaction outputs in wallet</p>
+<p>Outputs will have between minconf and maxconf (inclusive)
+confirmations, optionally filtered to only include txouts paid to
+addresses in addrs.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.lockunspent">
+<code class="descname">lockunspent</code><span class="sig-paren">(</span><em>unlock</em>, <em>outpoints</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.lockunspent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.lockunspent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lock or unlock outpoints</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.removenode">
+<code class="descname">removenode</code><span class="sig-paren">(</span><em>node</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.removenode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.removenode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.sendmany">
+<code class="descname">sendmany</code><span class="sig-paren">(</span><em>fromaccount</em>, <em>payments</em>, <em>minconf=1</em>, <em>comment=u''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.sendmany"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.sendmany" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sent amount to a given address</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.sendrawtransaction">
+<code class="descname">sendrawtransaction</code><span class="sig-paren">(</span><em>tx</em>, <em>allowhighfees=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.sendrawtransaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.sendrawtransaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submit transaction to local node and network.</p>
+<p>allowhighfees - Allow even if fees are unreasonably high.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.sendtoaddress">
+<code class="descname">sendtoaddress</code><span class="sig-paren">(</span><em>addr</em>, <em>amount</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.sendtoaddress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.sendtoaddress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sent amount to a given address</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.signrawtransaction">
+<code class="descname">signrawtransaction</code><span class="sig-paren">(</span><em>tx</em>, <em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.signrawtransaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.signrawtransaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sign inputs for transaction</p>
+<p>FIXME: implement options</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.submitblock">
+<code class="descname">submitblock</code><span class="sig-paren">(</span><em>block</em>, <em>params=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.submitblock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.submitblock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submit a new block to the network.</p>
+<p>params is optional and is currently ignored by bitcoind. See
+<a class="reference external" href="https://en.bitcoin.it/wiki/BIP_0022">https://en.bitcoin.it/wiki/BIP_0022</a> for full specification.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.rpc.Proxy.validateaddress">
+<code class="descname">validateaddress</code><span class="sig-paren">(</span><em>address</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/rpc.html#Proxy.validateaddress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.rpc.Proxy.validateaddress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return information about an address</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-bitcoin.signature">
+<span id="signature"></span><h2><code class="xref py py-mod docutils literal"><span class="pre">signature</span></code><a class="headerlink" href="#module-bitcoin.signature" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="bitcoin.signature.DERSignature">
+<em class="property">class </em><code class="descclassname">bitcoin.signature.</code><code class="descname">DERSignature</code><span class="sig-paren">(</span><em>r</em>, <em>s</em>, <em>length</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/signature.html#DERSignature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.signature.DERSignature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="bitcoin.core.html#bitcoin.core.serialize.ImmutableSerializable" title="bitcoin.core.serialize.ImmutableSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.ImmutableSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.signature.DERSignature.length">
+<code class="descname">length</code><a class="headerlink" href="#bitcoin.signature.DERSignature.length" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.signature.DERSignature.r">
+<code class="descname">r</code><a class="headerlink" href="#bitcoin.signature.DERSignature.r" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.signature.DERSignature.s">
+<code class="descname">s</code><a class="headerlink" href="#bitcoin.signature.DERSignature.s" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.signature.DERSignature.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/signature.html#DERSignature.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.signature.DERSignature.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.signature.DERSignature.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/signature.html#DERSignature.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.signature.DERSignature.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-bitcoin.signmessage">
+<span id="signmessage"></span><h2><code class="xref py py-mod docutils literal"><span class="pre">signmessage</span></code><a class="headerlink" href="#module-bitcoin.signmessage" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="bitcoin.signmessage.BitcoinMessage">
+<em class="property">class </em><code class="descclassname">bitcoin.signmessage.</code><code class="descname">BitcoinMessage</code><span class="sig-paren">(</span><em>message=u''</em>, <em>magic=u'Bitcoin Signed Message:n'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/signmessage.html#BitcoinMessage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.signmessage.BitcoinMessage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="bitcoin.core.html#bitcoin.core.serialize.ImmutableSerializable" title="bitcoin.core.serialize.ImmutableSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.ImmutableSerializable</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.signmessage.BitcoinMessage.magic">
+<code class="descname">magic</code><a class="headerlink" href="#bitcoin.signmessage.BitcoinMessage.magic" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.signmessage.BitcoinMessage.message">
+<code class="descname">message</code><a class="headerlink" href="#bitcoin.signmessage.BitcoinMessage.message" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.signmessage.BitcoinMessage.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/signmessage.html#BitcoinMessage.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.signmessage.BitcoinMessage.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.signmessage.BitcoinMessage.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/signmessage.html#BitcoinMessage.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.signmessage.BitcoinMessage.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.signmessage.SignMessage">
+<code class="descclassname">bitcoin.signmessage.</code><code class="descname">SignMessage</code><span class="sig-paren">(</span><em>key</em>, <em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/signmessage.html#SignMessage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.signmessage.SignMessage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.signmessage.VerifyMessage">
+<code class="descclassname">bitcoin.signmessage.</code><code class="descname">VerifyMessage</code><span class="sig-paren">(</span><em>address</em>, <em>message</em>, <em>sig</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/signmessage.html#VerifyMessage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.signmessage.VerifyMessage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-bitcoin.wallet">
+<span id="wallet"></span><h2><code class="xref py py-mod docutils literal"><span class="pre">wallet</span></code><a class="headerlink" href="#module-bitcoin.wallet" title="Permalink to this headline">¶</a></h2>
+<p>Wallet-related functionality</p>
+<p>Includes things like representing addresses and converting them to/from
+scriptPubKeys; currently there is no actual wallet support implemented.</p>
+<dl class="exception">
+<dt id="bitcoin.wallet.CBitcoinAddressError">
+<em class="property">exception </em><code class="descclassname">bitcoin.wallet.</code><code class="descname">CBitcoinAddressError</code><a class="reference internal" href="_modules/bitcoin/wallet.html#CBitcoinAddressError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.CBitcoinAddressError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.base58.Base58Error" title="bitcoin.base58.Base58Error"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.base58.Base58Error</span></code></a></p>
+<p>Raised when an invalid Bitcoin address is encountered</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.wallet.CBitcoinAddress">
+<em class="property">class </em><code class="descclassname">bitcoin.wallet.</code><code class="descname">CBitcoinAddress</code><span class="sig-paren">(</span><em>s</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#CBitcoinAddress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.CBitcoinAddress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.base58.CBase58Data" title="bitcoin.base58.CBase58Data"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.base58.CBase58Data</span></code></a></p>
+<p>A Bitcoin address</p>
+<p>Initialize from base58-encoded string</p>
+<p>Note: subclasses put your initialization routines here, but ignore the
+argument - that&#8217;s handled by __new__(), and .from_bytes() will call
+__init__() with None in place of the string.</p>
+<dl class="classmethod">
+<dt id="bitcoin.wallet.CBitcoinAddress.from_bytes">
+<em class="property">classmethod </em><code class="descname">from_bytes</code><span class="sig-paren">(</span><em>data</em>, <em>nVersion</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#CBitcoinAddress.from_bytes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.CBitcoinAddress.from_bytes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.wallet.CBitcoinAddress.from_scriptPubKey">
+<em class="property">classmethod </em><code class="descname">from_scriptPubKey</code><span class="sig-paren">(</span><em>scriptPubKey</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#CBitcoinAddress.from_scriptPubKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.CBitcoinAddress.from_scriptPubKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a scriptPubKey to a CBitcoinAddress</p>
+<p>Returns a CBitcoinAddress subclass, either P2SHBitcoinAddress or
+P2PKHBitcoinAddress. If the scriptPubKey is not recognized
+CBitcoinAddressError will be raised.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.wallet.CBitcoinAddress.to_scriptPubKey">
+<code class="descname">to_scriptPubKey</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#CBitcoinAddress.to_scriptPubKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.CBitcoinAddress.to_scriptPubKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert an address to a scriptPubKey</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.wallet.P2SHBitcoinAddress">
+<em class="property">class </em><code class="descclassname">bitcoin.wallet.</code><code class="descname">P2SHBitcoinAddress</code><span class="sig-paren">(</span><em>s</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#P2SHBitcoinAddress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.P2SHBitcoinAddress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.wallet.CBitcoinAddress" title="bitcoin.wallet.CBitcoinAddress"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.wallet.CBitcoinAddress</span></code></a></p>
+<p>Initialize from base58-encoded string</p>
+<p>Note: subclasses put your initialization routines here, but ignore the
+argument - that&#8217;s handled by __new__(), and .from_bytes() will call
+__init__() with None in place of the string.</p>
+<dl class="classmethod">
+<dt id="bitcoin.wallet.P2SHBitcoinAddress.from_bytes">
+<em class="property">classmethod </em><code class="descname">from_bytes</code><span class="sig-paren">(</span><em>data</em>, <em>nVersion=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#P2SHBitcoinAddress.from_bytes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.P2SHBitcoinAddress.from_bytes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.wallet.P2SHBitcoinAddress.from_redeemScript">
+<em class="property">classmethod </em><code class="descname">from_redeemScript</code><span class="sig-paren">(</span><em>redeemScript</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#P2SHBitcoinAddress.from_redeemScript"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.P2SHBitcoinAddress.from_redeemScript" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a redeemScript to a P2SH address</p>
+<p>Convenience function: equivalent to P2SHBitcoinAddress.from_scriptPubKey(redeemScript.to_p2sh_scriptPubKey())</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.wallet.P2SHBitcoinAddress.from_scriptPubKey">
+<em class="property">classmethod </em><code class="descname">from_scriptPubKey</code><span class="sig-paren">(</span><em>scriptPubKey</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#P2SHBitcoinAddress.from_scriptPubKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.P2SHBitcoinAddress.from_scriptPubKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a scriptPubKey to a P2SH address</p>
+<p>Raises CBitcoinAddressError if the scriptPubKey isn&#8217;t of the correct
+form.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.wallet.P2SHBitcoinAddress.to_scriptPubKey">
+<code class="descname">to_scriptPubKey</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#P2SHBitcoinAddress.to_scriptPubKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.P2SHBitcoinAddress.to_scriptPubKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert an address to a scriptPubKey</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.wallet.P2PKHBitcoinAddress">
+<em class="property">class </em><code class="descclassname">bitcoin.wallet.</code><code class="descname">P2PKHBitcoinAddress</code><span class="sig-paren">(</span><em>s</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#P2PKHBitcoinAddress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.P2PKHBitcoinAddress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.wallet.CBitcoinAddress" title="bitcoin.wallet.CBitcoinAddress"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.wallet.CBitcoinAddress</span></code></a></p>
+<p>Initialize from base58-encoded string</p>
+<p>Note: subclasses put your initialization routines here, but ignore the
+argument - that&#8217;s handled by __new__(), and .from_bytes() will call
+__init__() with None in place of the string.</p>
+<dl class="classmethod">
+<dt id="bitcoin.wallet.P2PKHBitcoinAddress.from_bytes">
+<em class="property">classmethod </em><code class="descname">from_bytes</code><span class="sig-paren">(</span><em>data</em>, <em>nVersion=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#P2PKHBitcoinAddress.from_bytes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.P2PKHBitcoinAddress.from_bytes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.wallet.P2PKHBitcoinAddress.from_pubkey">
+<em class="property">classmethod </em><code class="descname">from_pubkey</code><span class="sig-paren">(</span><em>pubkey</em>, <em>accept_invalid=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#P2PKHBitcoinAddress.from_pubkey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.P2PKHBitcoinAddress.from_pubkey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a P2PKH bitcoin address from a pubkey</p>
+<p>Raises CBitcoinAddressError if pubkey is invalid, unless accept_invalid
+is True.</p>
+<p>The pubkey must be a bytes instance; CECKey instances are not accepted.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.wallet.P2PKHBitcoinAddress.from_scriptPubKey">
+<em class="property">classmethod </em><code class="descname">from_scriptPubKey</code><span class="sig-paren">(</span><em>scriptPubKey</em>, <em>accept_non_canonical_pushdata=True</em>, <em>accept_bare_checksig=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#P2PKHBitcoinAddress.from_scriptPubKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.P2PKHBitcoinAddress.from_scriptPubKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a scriptPubKey to a P2PKH address</p>
+<p>Raises CBitcoinAddressError if the scriptPubKey isn&#8217;t of the correct
+form.</p>
+<p>accept_non_canonical_pushdata - Allow non-canonical pushes (default True)</p>
+<p>accept_bare_checksig          - Treat bare-checksig as P2PKH scriptPubKeys (default True)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.wallet.P2PKHBitcoinAddress.to_scriptPubKey">
+<code class="descname">to_scriptPubKey</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#P2PKHBitcoinAddress.to_scriptPubKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.P2PKHBitcoinAddress.to_scriptPubKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert an address to a scriptPubKey</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.wallet.CKey">
+<em class="property">class </em><code class="descclassname">bitcoin.wallet.</code><code class="descname">CKey</code><span class="sig-paren">(</span><em>secret</em>, <em>compressed=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#CKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.CKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>An encapsulated private key</p>
+<p>Attributes:</p>
+<p>pub           - The corresponding CPubKey for this private key</p>
+<p>is_compressed - True if compressed</p>
+<dl class="attribute">
+<dt id="bitcoin.wallet.CKey.is_compressed">
+<code class="descname">is_compressed</code><a class="headerlink" href="#bitcoin.wallet.CKey.is_compressed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.wallet.CKey.sign">
+<code class="descname">sign</code><span class="sig-paren">(</span><em>hash</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#CKey.sign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.CKey.sign" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.wallet.CKey.sign_compact">
+<code class="descname">sign_compact</code><span class="sig-paren">(</span><em>hash</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#CKey.sign_compact"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.CKey.sign_compact" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.wallet.CBitcoinSecretError">
+<em class="property">exception </em><code class="descclassname">bitcoin.wallet.</code><code class="descname">CBitcoinSecretError</code><a class="reference internal" href="_modules/bitcoin/wallet.html#CBitcoinSecretError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.CBitcoinSecretError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.base58.Base58Error" title="bitcoin.base58.Base58Error"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.base58.Base58Error</span></code></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.wallet.CBitcoinSecret">
+<em class="property">class </em><code class="descclassname">bitcoin.wallet.</code><code class="descname">CBitcoinSecret</code><span class="sig-paren">(</span><em>s</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#CBitcoinSecret"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.CBitcoinSecret" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.base58.CBase58Data" title="bitcoin.base58.CBase58Data"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.base58.CBase58Data</span></code></a>, <a class="reference internal" href="#bitcoin.wallet.CKey" title="bitcoin.wallet.CKey"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.wallet.CKey</span></code></a></p>
+<p>A base58-encoded secret key</p>
+<dl class="classmethod">
+<dt id="bitcoin.wallet.CBitcoinSecret.from_secret_bytes">
+<em class="property">classmethod </em><code class="descname">from_secret_bytes</code><span class="sig-paren">(</span><em>secret</em>, <em>compressed=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/wallet.html#CBitcoinSecret.from_secret_bytes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.wallet.CBitcoinSecret.from_secret_bytes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a secret key from a 32-byte secret</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">bitcoin</a><ul>
+<li><a class="reference internal" href="#id1"><code class="docutils literal"><span class="pre">bitcoin</span></code></a></li>
+<li><a class="reference internal" href="#module-bitcoin.base58"><code class="docutils literal"><span class="pre">base58</span></code></a></li>
+<li><a class="reference internal" href="#module-bitcoin.bloom"><code class="docutils literal"><span class="pre">bloom</span></code></a></li>
+<li><a class="reference internal" href="#module-bitcoin.messages"><code class="docutils literal"><span class="pre">messages</span></code></a></li>
+<li><a class="reference internal" href="#module-bitcoin.net"><code class="docutils literal"><span class="pre">net</span></code></a></li>
+<li><a class="reference internal" href="#module-bitcoin.rpc"><code class="docutils literal"><span class="pre">rpc</span></code></a></li>
+<li><a class="reference internal" href="#module-bitcoin.signature"><code class="docutils literal"><span class="pre">signature</span></code></a></li>
+<li><a class="reference internal" href="#module-bitcoin.signmessage"><code class="docutils literal"><span class="pre">signmessage</span></code></a></li>
+<li><a class="reference internal" href="#module-bitcoin.wallet"><code class="docutils literal"><span class="pre">wallet</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">python-bitcoinlib Documentation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="bitcoin.core.html"
+                        title="next chapter">bitcoin.core</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/bitcoin.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="bitcoin.core.html" title="bitcoin.core"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="python-bitcoinlib Documentation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2012-2015, The python-bitcoinlib developers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

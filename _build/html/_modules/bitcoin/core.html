@@ -1,0 +1,878 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>bitcoin.core &mdash; python-bitcoinlib 0.5.1-SNAPSHOT documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.5.1-SNAPSHOT',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="python-bitcoinlib 0.5.1-SNAPSHOT documentation" href="../../index.html" />
+    <link rel="up" title="bitcoin" href="../bitcoin.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../bitcoin.html" accesskey="U">bitcoin</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bitcoin.core</h1><div class="highlight"><pre>
+<span class="c"># Copyright (C) 2012-2015 The python-bitcoinlib developers</span>
+<span class="c">#</span>
+<span class="c"># This file is part of python-bitcoinlib.</span>
+<span class="c">#</span>
+<span class="c"># It is subject to the license terms in the LICENSE file found in the top-level</span>
+<span class="c"># directory of this distribution.</span>
+<span class="c">#</span>
+<span class="c"># No part of python-bitcoinlib, including this file, may be copied, modified,</span>
+<span class="c"># propagated, or distributed except according to the terms contained in the</span>
+<span class="c"># LICENSE file.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">binascii</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">from</span> <span class="nn">.script</span> <span class="kn">import</span> <span class="n">CScript</span>
+
+<span class="kn">from</span> <span class="nn">.serialize</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="c"># Core definitions</span>
+<span class="n">COIN</span> <span class="o">=</span> <span class="mi">100000000</span>
+<span class="n">MAX_BLOCK_SIZE</span> <span class="o">=</span> <span class="mi">1000000</span>
+<span class="n">MAX_BLOCK_SIGOPS</span> <span class="o">=</span> <span class="n">MAX_BLOCK_SIZE</span><span class="o">/</span><span class="mi">50</span>
+
+<div class="viewcode-block" id="MoneyRange"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.MoneyRange">[docs]</a><span class="k">def</span> <span class="nf">MoneyRange</span><span class="p">(</span><span class="n">nValue</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">coreparams</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">params</span><span class="p">:</span>
+      <span class="n">params</span> <span class="o">=</span> <span class="n">coreparams</span>
+
+    <span class="k">return</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">nValue</span> <span class="o">&lt;=</span> <span class="n">params</span><span class="o">.</span><span class="n">MAX_MONEY</span>
+</div>
+<span class="k">def</span> <span class="nf">_py2_x</span><span class="p">(</span><span class="n">h</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a hex string to bytes&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">binascii</span><span class="o">.</span><span class="n">unhexlify</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+
+<div class="viewcode-block" id="x"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.x">[docs]</a><span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="n">h</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a hex string to bytes&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">binascii</span><span class="o">.</span><span class="n">unhexlify</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;utf8&#39;</span><span class="p">))</span>
+</div>
+<span class="k">def</span> <span class="nf">_py2_b2x</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert bytes to a hex string&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+
+<div class="viewcode-block" id="b2x"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.b2x">[docs]</a><span class="k">def</span> <span class="nf">b2x</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert bytes to a hex string&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;utf8&#39;</span><span class="p">)</span>
+</div>
+<span class="k">def</span> <span class="nf">_py2_lx</span><span class="p">(</span><span class="n">h</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a little-endian hex string to bytes</span>
+
+<span class="sd">    Lets you write uint256&#39;s and uint160&#39;s the way the Satoshi codebase shows</span>
+<span class="sd">    them.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">binascii</span><span class="o">.</span><span class="n">unhexlify</span><span class="p">(</span><span class="n">h</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+<div class="viewcode-block" id="lx"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.lx">[docs]</a><span class="k">def</span> <span class="nf">lx</span><span class="p">(</span><span class="n">h</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a little-endian hex string to bytes</span>
+
+<span class="sd">    Lets you write uint256&#39;s and uint160&#39;s the way the Satoshi codebase shows</span>
+<span class="sd">    them.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">binascii</span><span class="o">.</span><span class="n">unhexlify</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;utf8&#39;</span><span class="p">))[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</div>
+<span class="k">def</span> <span class="nf">_py2_b2lx</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert bytes to a little-endian hex string</span>
+
+<span class="sd">    Lets you show uint256&#39;s and uint160&#39;s the way the Satoshi codebase shows</span>
+<span class="sd">    them.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">b</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+<div class="viewcode-block" id="b2lx"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.b2lx">[docs]</a><span class="k">def</span> <span class="nf">b2lx</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert bytes to a little-endian hex string</span>
+
+<span class="sd">    Lets you show uint256&#39;s and uint160&#39;s the way the Satoshi codebase shows</span>
+<span class="sd">    them.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">b</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;utf8&#39;</span><span class="p">)</span>
+</div>
+<span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;</span> <span class="s">&#39;3&#39;</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">_py2_x</span>
+    <span class="n">b2x</span> <span class="o">=</span> <span class="n">_py2_b2x</span>
+    <span class="n">lx</span> <span class="o">=</span> <span class="n">_py2_lx</span>
+    <span class="n">b2lx</span> <span class="o">=</span> <span class="n">_py2_b2lx</span>
+
+<span class="k">del</span> <span class="n">_py2_x</span>
+<span class="k">del</span> <span class="n">_py2_b2x</span>
+<span class="k">del</span> <span class="n">_py2_lx</span>
+<span class="k">del</span> <span class="n">_py2_b2lx</span>
+
+
+<div class="viewcode-block" id="str_money_value"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.str_money_value">[docs]</a><span class="k">def</span> <span class="nf">str_money_value</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert an integer money value to a fixed point string&quot;&quot;&quot;</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%i</span><span class="s">.</span><span class="si">%08i</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">value</span> <span class="o">//</span> <span class="n">COIN</span><span class="p">,</span> <span class="n">value</span> <span class="o">%</span> <span class="n">COIN</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&#39;0&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;.&#39;</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">+=</span> <span class="s">&#39;0&#39;</span>
+    <span class="k">return</span> <span class="n">r</span>
+
+</div>
+<div class="viewcode-block" id="ValidationError"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.ValidationError">[docs]</a><span class="k">class</span> <span class="nc">ValidationError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for all blockchain validation errors</span>
+
+<span class="sd">    Everything that is related to validating the blockchain, blocks,</span>
+<span class="sd">    transactions, scripts, etc. is derived from this class.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</div>
+<span class="k">def</span> <span class="nf">__make_mutable</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+    <span class="c"># For speed we use a class decorator that removes the immutable</span>
+    <span class="c"># restrictions directly. In addition the modified behavior of GetHash() and</span>
+    <span class="c"># hash() is undone.</span>
+    <span class="n">cls</span><span class="o">.</span><span class="n">__setattr__</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span>
+    <span class="n">cls</span><span class="o">.</span><span class="n">__delattr__</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="n">__delattr__</span>
+    <span class="n">cls</span><span class="o">.</span><span class="n">GetHash</span> <span class="o">=</span> <span class="n">Serializable</span><span class="o">.</span><span class="n">GetHash</span>
+    <span class="n">cls</span><span class="o">.</span><span class="n">__hash__</span> <span class="o">=</span> <span class="n">Serializable</span><span class="o">.</span><span class="n">__hash__</span>
+    <span class="k">return</span> <span class="n">cls</span>
+
+
+<div class="viewcode-block" id="COutPoint"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.COutPoint">[docs]</a><span class="k">class</span> <span class="nc">COutPoint</span><span class="p">(</span><span class="n">ImmutableSerializable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The combination of a transaction hash and an index n into its vout&quot;&quot;&quot;</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;hash&#39;</span><span class="p">,</span> <span class="s">&#39;n&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">hash</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;</span><span class="se">\x00</span><span class="s">&#39;</span><span class="o">*</span><span class="mi">32</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mh">0xffffffff</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="nb">hash</span><span class="p">)</span> <span class="o">==</span> <span class="mi">32</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;COutPoint: hash must be exactly 32 bytes; got </span><span class="si">%d</span><span class="s"> bytes&#39;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="nb">hash</span><span class="p">))</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;hash&#39;</span><span class="p">,</span> <span class="nb">hash</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="mh">0xffffffff</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;COutPoint: n must be in range 0x0 to 0xffffffff; got </span><span class="si">%x</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;n&#39;</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="COutPoint.stream_deserialize"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.COutPoint.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="nb">hash</span> <span class="o">=</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">32</span><span class="p">)</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="nb">hash</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="COutPoint.stream_serialize"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.COutPoint.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hash</span><span class="p">)</span> <span class="o">==</span> <span class="mi">32</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hash</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="COutPoint.is_null"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.COutPoint.is_null">[docs]</a>    <span class="k">def</span> <span class="nf">is_null</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">hash</span> <span class="o">==</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\x00</span><span class="s">&#39;</span><span class="o">*</span><span class="mi">32</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mh">0xffffffff</span><span class="p">))</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_null</span><span class="p">():</span>
+            <span class="k">return</span> <span class="s">&#39;COutPoint()&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;COutPoint(lx(</span><span class="si">%r</span><span class="s">), </span><span class="si">%i</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">b2lx</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hash</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">:</span><span class="si">%i</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">b2lx</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hash</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="COutPoint.from_outpoint"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.COutPoint.from_outpoint">[docs]</a>    <span class="k">def</span> <span class="nf">from_outpoint</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">outpoint</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create an immutable copy of an existing OutPoint</span>
+
+<span class="sd">        If outpoint is already immutable (outpoint.__class__ is COutPoint) it is</span>
+<span class="sd">        returned directly.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">outpoint</span><span class="o">.</span><span class="n">__class__</span> <span class="ow">is</span> <span class="n">COutPoint</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">outpoint</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">outpoint</span><span class="o">.</span><span class="n">hash</span><span class="p">,</span> <span class="n">outpoint</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+</div></div>
+<span class="nd">@__make_mutable</span>
+<div class="viewcode-block" id="CMutableOutPoint"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CMutableOutPoint">[docs]</a><span class="k">class</span> <span class="nc">CMutableOutPoint</span><span class="p">(</span><span class="n">COutPoint</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A mutable COutPoint&quot;&quot;&quot;</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="CMutableOutPoint.from_outpoint"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CMutableOutPoint.from_outpoint">[docs]</a>    <span class="k">def</span> <span class="nf">from_outpoint</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">outpoint</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a mutable copy of an existing COutPoint&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">outpoint</span><span class="o">.</span><span class="n">hash</span><span class="p">,</span> <span class="n">outpoint</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="CTxIn"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CTxIn">[docs]</a><span class="k">class</span> <span class="nc">CTxIn</span><span class="p">(</span><span class="n">ImmutableSerializable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An input of a transaction</span>
+
+<span class="sd">    Contains the location of the previous transaction&#39;s output that it claims,</span>
+<span class="sd">    and a signature that matches the output&#39;s public key.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;prevout&#39;</span><span class="p">,</span> <span class="s">&#39;scriptSig&#39;</span><span class="p">,</span> <span class="s">&#39;nSequence&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prevout</span><span class="o">=</span><span class="n">COutPoint</span><span class="p">(),</span> <span class="n">scriptSig</span><span class="o">=</span><span class="n">CScript</span><span class="p">(),</span> <span class="n">nSequence</span> <span class="o">=</span> <span class="mh">0xffffffff</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">nSequence</span> <span class="o">&lt;=</span> <span class="mh">0xffffffff</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;CTxIn: nSequence must be an integer between 0x0 and 0xffffffff; got </span><span class="si">%x</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">nSequence</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;nSequence&#39;</span><span class="p">,</span> <span class="n">nSequence</span><span class="p">)</span>
+
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;prevout&#39;</span><span class="p">,</span> <span class="n">prevout</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;scriptSig&#39;</span><span class="p">,</span> <span class="n">scriptSig</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="CTxIn.stream_deserialize"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CTxIn.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">prevout</span> <span class="o">=</span> <span class="n">COutPoint</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">scriptSig</span> <span class="o">=</span> <span class="n">script</span><span class="o">.</span><span class="n">CScript</span><span class="p">(</span><span class="n">BytesSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+        <span class="n">nSequence</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">prevout</span><span class="p">,</span> <span class="n">scriptSig</span><span class="p">,</span> <span class="n">nSequence</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CTxIn.stream_serialize"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CTxIn.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">COutPoint</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prevout</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">BytesSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scriptSig</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nSequence</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="CTxIn.is_final"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CTxIn.is_final">[docs]</a>    <span class="k">def</span> <span class="nf">is_final</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nSequence</span> <span class="o">==</span> <span class="mh">0xffffffff</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;CTxIn(</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">, 0x</span><span class="si">%x</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prevout</span><span class="p">),</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scriptSig</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">nSequence</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="CTxIn.from_txin"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CTxIn.from_txin">[docs]</a>    <span class="k">def</span> <span class="nf">from_txin</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">txin</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create an immutable copy of an existing TxIn</span>
+
+<span class="sd">        If txin is already immutable (txin.__class__ is CTxIn) it is returned</span>
+<span class="sd">        directly.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">txin</span><span class="o">.</span><span class="n">__class__</span> <span class="ow">is</span> <span class="n">CTxIn</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">txin</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">COutPoint</span><span class="o">.</span><span class="n">from_txout</span><span class="p">(</span><span class="n">txin</span><span class="o">.</span><span class="n">prevout</span><span class="p">),</span> <span class="n">txin</span><span class="o">.</span><span class="n">scriptSig</span><span class="p">,</span> <span class="n">txin</span><span class="o">.</span><span class="n">nSequence</span><span class="p">)</span>
+</div></div>
+<span class="nd">@__make_mutable</span>
+<div class="viewcode-block" id="CMutableTxIn"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CMutableTxIn">[docs]</a><span class="k">class</span> <span class="nc">CMutableTxIn</span><span class="p">(</span><span class="n">CTxIn</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A mutable CTxIn&quot;&quot;&quot;</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prevout</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">scriptSig</span><span class="o">=</span><span class="n">CScript</span><span class="p">(),</span> <span class="n">nSequence</span> <span class="o">=</span> <span class="mh">0xffffffff</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">nSequence</span> <span class="o">&lt;=</span> <span class="mh">0xffffffff</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;CTxIn: nSequence must be an integer between 0x0 and 0xffffffff; got </span><span class="si">%x</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">nSequence</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nSequence</span> <span class="o">=</span> <span class="n">nSequence</span>
+
+        <span class="k">if</span> <span class="n">prevout</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">prevout</span> <span class="o">=</span> <span class="n">CMutableOutPoint</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prevout</span> <span class="o">=</span> <span class="n">prevout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scriptSig</span> <span class="o">=</span> <span class="n">scriptSig</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="CMutableTxIn.from_txin"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CMutableTxIn.from_txin">[docs]</a>    <span class="k">def</span> <span class="nf">from_txin</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">txin</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a fully mutable copy of an existing TxIn&quot;&quot;&quot;</span>
+        <span class="n">prevout</span> <span class="o">=</span> <span class="n">CMutableOutPoint</span><span class="o">.</span><span class="n">from_outpoint</span><span class="p">(</span><span class="n">txin</span><span class="o">.</span><span class="n">prevout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">prevout</span><span class="p">,</span> <span class="n">txin</span><span class="o">.</span><span class="n">scriptSig</span><span class="p">,</span> <span class="n">txin</span><span class="o">.</span><span class="n">nSequence</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="CTxOut"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CTxOut">[docs]</a><span class="k">class</span> <span class="nc">CTxOut</span><span class="p">(</span><span class="n">ImmutableSerializable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An output of a transaction</span>
+
+<span class="sd">    Contains the public key that the next input must be able to sign with to</span>
+<span class="sd">    claim it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;nValue&#39;</span><span class="p">,</span> <span class="s">&#39;scriptPubKey&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nValue</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">scriptPubKey</span><span class="o">=</span><span class="n">script</span><span class="o">.</span><span class="n">CScript</span><span class="p">()):</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;nValue&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">nValue</span><span class="p">))</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;scriptPubKey&#39;</span><span class="p">,</span> <span class="n">scriptPubKey</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="CTxOut.stream_deserialize"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CTxOut.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">nValue</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;q&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">8</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">scriptPubKey</span> <span class="o">=</span> <span class="n">script</span><span class="o">.</span><span class="n">CScript</span><span class="p">(</span><span class="n">BytesSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">nValue</span><span class="p">,</span> <span class="n">scriptPubKey</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CTxOut.stream_serialize"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CTxOut.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;q&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nValue</span><span class="p">))</span>
+        <span class="n">BytesSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scriptPubKey</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CTxOut.is_valid"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CTxOut.is_valid">[docs]</a>    <span class="k">def</span> <span class="nf">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">MoneyRange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nValue</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">scriptPubKey</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nValue</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&quot;CTxOut(</span><span class="si">%s</span><span class="s">*COIN, </span><span class="si">%r</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">str_money_value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nValue</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">scriptPubKey</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&quot;CTxOut(</span><span class="si">%d</span><span class="s">, </span><span class="si">%r</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nValue</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scriptPubKey</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="CTxOut.from_txout"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CTxOut.from_txout">[docs]</a>    <span class="k">def</span> <span class="nf">from_txout</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">txout</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create an immutable copy of an existing TxOut</span>
+
+<span class="sd">        If txout is already immutable (txout.__class__ is CTxOut) then it will</span>
+<span class="sd">        be returned directly.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">txout</span><span class="o">.</span><span class="n">__class__</span> <span class="ow">is</span> <span class="n">CTxOut</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">txout</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">txout</span><span class="o">.</span><span class="n">nValue</span><span class="p">,</span> <span class="n">txout</span><span class="o">.</span><span class="n">scriptPubKey</span><span class="p">)</span>
+</div></div>
+<span class="nd">@__make_mutable</span>
+<div class="viewcode-block" id="CMutableTxOut"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CMutableTxOut">[docs]</a><span class="k">class</span> <span class="nc">CMutableTxOut</span><span class="p">(</span><span class="n">CTxOut</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A mutable CTxOut&quot;&quot;&quot;</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="CMutableTxOut.from_txout"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CMutableTxOut.from_txout">[docs]</a>    <span class="k">def</span> <span class="nf">from_txout</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">txout</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a fullly mutable copy of an existing TxOut&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">txout</span><span class="o">.</span><span class="n">nValue</span><span class="p">,</span> <span class="n">txout</span><span class="o">.</span><span class="n">scriptPubKey</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="CTransaction"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CTransaction">[docs]</a><span class="k">class</span> <span class="nc">CTransaction</span><span class="p">(</span><span class="n">ImmutableSerializable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A transaction&quot;&quot;&quot;</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;nVersion&#39;</span><span class="p">,</span> <span class="s">&#39;vin&#39;</span><span class="p">,</span> <span class="s">&#39;vout&#39;</span><span class="p">,</span> <span class="s">&#39;nLockTime&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vin</span><span class="o">=</span><span class="p">(),</span> <span class="n">vout</span><span class="o">=</span><span class="p">(),</span> <span class="n">nLockTime</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nVersion</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a new transaction</span>
+
+<span class="sd">        vin and vout are iterables of transaction inputs and outputs</span>
+<span class="sd">        respectively. If their contents are not already immutable, immutable</span>
+<span class="sd">        copies will be made.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">nLockTime</span> <span class="o">&lt;=</span> <span class="mh">0xffffffff</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;CTransaction: nLockTime must be in range 0x0 to 0xffffffff; got </span><span class="si">%x</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">nLockTime</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;nLockTime&#39;</span><span class="p">,</span> <span class="n">nLockTime</span><span class="p">)</span>
+
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;nVersion&#39;</span><span class="p">,</span> <span class="n">nVersion</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;vin&#39;</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">CTxIn</span><span class="o">.</span><span class="n">from_txin</span><span class="p">(</span><span class="n">txin</span><span class="p">)</span> <span class="k">for</span> <span class="n">txin</span> <span class="ow">in</span> <span class="n">vin</span><span class="p">))</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;vout&#39;</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">CTxOut</span><span class="o">.</span><span class="n">from_txout</span><span class="p">(</span><span class="n">txout</span><span class="p">)</span> <span class="k">for</span> <span class="n">txout</span> <span class="ow">in</span> <span class="n">vout</span><span class="p">))</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="CTransaction.stream_deserialize"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CTransaction.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">nVersion</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;i&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">vin</span> <span class="o">=</span> <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">CTxIn</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">vout</span> <span class="o">=</span> <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">CTxOut</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">nLockTime</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">vin</span><span class="p">,</span> <span class="n">vout</span><span class="p">,</span> <span class="n">nLockTime</span><span class="p">,</span> <span class="n">nVersion</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CTransaction.stream_serialize"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CTransaction.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;i&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nVersion</span><span class="p">))</span>
+        <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">CTxIn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vin</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">CTxOut</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vout</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nLockTime</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="CTransaction.is_coinbase"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CTransaction.is_coinbase">[docs]</a>    <span class="k">def</span> <span class="nf">is_coinbase</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vin</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">vin</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">prevout</span><span class="o">.</span><span class="n">is_null</span><span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;CTransaction(</span><span class="si">%r</span><span class="s">, </span><span class="si">%r</span><span class="s">, </span><span class="si">%i</span><span class="s">, </span><span class="si">%i</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nLockTime</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nVersion</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="CTransaction.from_tx"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CTransaction.from_tx">[docs]</a>    <span class="k">def</span> <span class="nf">from_tx</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">tx</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create an immutable copy of a pre-existing transaction</span>
+
+<span class="sd">        If tx is already immutable (tx.__class__ is CTransaction) then it will</span>
+<span class="sd">        be returned directly.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">tx</span><span class="o">.</span><span class="n">__class__</span> <span class="ow">is</span> <span class="n">CTransaction</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">tx</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">tx</span><span class="o">.</span><span class="n">vin</span><span class="p">,</span> <span class="n">tx</span><span class="o">.</span><span class="n">vout</span><span class="p">,</span> <span class="n">tx</span><span class="o">.</span><span class="n">nLockTime</span><span class="p">,</span> <span class="n">tx</span><span class="o">.</span><span class="n">nVersion</span><span class="p">)</span>
+
+</div></div>
+<span class="nd">@__make_mutable</span>
+<div class="viewcode-block" id="CMutableTransaction"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CMutableTransaction">[docs]</a><span class="k">class</span> <span class="nc">CMutableTransaction</span><span class="p">(</span><span class="n">CTransaction</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A mutable transaction&quot;&quot;&quot;</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vin</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">vout</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nLockTime</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nVersion</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">nLockTime</span> <span class="o">&lt;=</span> <span class="mh">0xffffffff</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;CTransaction: nLockTime must be in range 0x0 to 0xffffffff; got </span><span class="si">%x</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">nLockTime</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nLockTime</span> <span class="o">=</span> <span class="n">nLockTime</span>
+
+        <span class="k">if</span> <span class="n">vin</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">vin</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vin</span> <span class="o">=</span> <span class="n">vin</span>
+
+        <span class="k">if</span> <span class="n">vout</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">vout</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vout</span> <span class="o">=</span> <span class="n">vout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nVersion</span> <span class="o">=</span> <span class="n">nVersion</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="CMutableTransaction.from_tx"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CMutableTransaction.from_tx">[docs]</a>    <span class="k">def</span> <span class="nf">from_tx</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">tx</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a fully mutable copy of a pre-existing transaction&quot;&quot;&quot;</span>
+        <span class="n">vin</span> <span class="o">=</span> <span class="p">[</span><span class="n">CMutableTxIn</span><span class="o">.</span><span class="n">from_txin</span><span class="p">(</span><span class="n">txin</span><span class="p">)</span> <span class="k">for</span> <span class="n">txin</span> <span class="ow">in</span> <span class="n">tx</span><span class="o">.</span><span class="n">vin</span><span class="p">]</span>
+        <span class="n">vout</span> <span class="o">=</span> <span class="p">[</span><span class="n">CMutableTxOut</span><span class="o">.</span><span class="n">from_txout</span><span class="p">(</span><span class="n">txout</span><span class="p">)</span> <span class="k">for</span> <span class="n">txout</span> <span class="ow">in</span> <span class="n">tx</span><span class="o">.</span><span class="n">vout</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">vin</span><span class="p">,</span> <span class="n">vout</span><span class="p">,</span> <span class="n">tx</span><span class="o">.</span><span class="n">nLockTime</span><span class="p">,</span> <span class="n">tx</span><span class="o">.</span><span class="n">nVersion</span><span class="p">)</span>
+
+
+
+</div></div>
+<div class="viewcode-block" id="CBlockHeader"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CBlockHeader">[docs]</a><span class="k">class</span> <span class="nc">CBlockHeader</span><span class="p">(</span><span class="n">ImmutableSerializable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A block header&quot;&quot;&quot;</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;nVersion&#39;</span><span class="p">,</span> <span class="s">&#39;hashPrevBlock&#39;</span><span class="p">,</span> <span class="s">&#39;hashMerkleRoot&#39;</span><span class="p">,</span> <span class="s">&#39;nTime&#39;</span><span class="p">,</span> <span class="s">&#39;nBits&#39;</span><span class="p">,</span> <span class="s">&#39;nNonce&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nVersion</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">hashPrevBlock</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;</span><span class="se">\x00</span><span class="s">&#39;</span><span class="o">*</span><span class="mi">32</span><span class="p">,</span> <span class="n">hashMerkleRoot</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;</span><span class="se">\x00</span><span class="s">&#39;</span><span class="o">*</span><span class="mi">32</span><span class="p">,</span> <span class="n">nTime</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nBits</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nNonce</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;nVersion&#39;</span><span class="p">,</span> <span class="n">nVersion</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">hashPrevBlock</span><span class="p">)</span> <span class="o">==</span> <span class="mi">32</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;hashPrevBlock&#39;</span><span class="p">,</span> <span class="n">hashPrevBlock</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">hashMerkleRoot</span><span class="p">)</span> <span class="o">==</span> <span class="mi">32</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;hashMerkleRoot&#39;</span><span class="p">,</span> <span class="n">hashMerkleRoot</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;nTime&#39;</span><span class="p">,</span> <span class="n">nTime</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;nBits&#39;</span><span class="p">,</span> <span class="n">nBits</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;nNonce&#39;</span><span class="p">,</span> <span class="n">nNonce</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="CBlockHeader.stream_deserialize"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CBlockHeader.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">nVersion</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;i&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">hashPrevBlock</span> <span class="o">=</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">32</span><span class="p">)</span>
+        <span class="n">hashMerkleRoot</span> <span class="o">=</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">32</span><span class="p">)</span>
+        <span class="n">nTime</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">nBits</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">nNonce</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">ser_read</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">nVersion</span><span class="p">,</span> <span class="n">hashPrevBlock</span><span class="p">,</span> <span class="n">hashMerkleRoot</span><span class="p">,</span> <span class="n">nTime</span><span class="p">,</span> <span class="n">nBits</span><span class="p">,</span> <span class="n">nNonce</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CBlockHeader.stream_serialize"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CBlockHeader.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;i&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nVersion</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hashPrevBlock</span><span class="p">)</span> <span class="o">==</span> <span class="mi">32</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hashPrevBlock</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hashMerkleRoot</span><span class="p">)</span> <span class="o">==</span> <span class="mi">32</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hashMerkleRoot</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nTime</span><span class="p">))</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nBits</span><span class="p">))</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nNonce</span><span class="p">))</span>
+</div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="CBlockHeader.calc_difficulty"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CBlockHeader.calc_difficulty">[docs]</a>    <span class="k">def</span> <span class="nf">calc_difficulty</span><span class="p">(</span><span class="n">nBits</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate difficulty from nBits target&quot;&quot;&quot;</span>
+        <span class="n">nShift</span> <span class="o">=</span> <span class="p">(</span><span class="n">nBits</span> <span class="o">&gt;&gt;</span> <span class="mi">24</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xff</span>
+        <span class="n">dDiff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="mh">0x0000ffff</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">nBits</span> <span class="o">&amp;</span> <span class="mh">0x00ffffff</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">nShift</span> <span class="o">&lt;</span> <span class="mi">29</span><span class="p">:</span>
+            <span class="n">dDiff</span> <span class="o">*=</span> <span class="mf">256.0</span>
+            <span class="n">nShift</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="n">nShift</span> <span class="o">&gt;</span> <span class="mi">29</span><span class="p">:</span>
+            <span class="n">dDiff</span> <span class="o">/=</span> <span class="mf">256.0</span>
+            <span class="n">nShift</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">dDiff</span></div>
+    <span class="n">difficulty</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="n">CBlockHeader</span><span class="o">.</span><span class="n">calc_difficulty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nBits</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">(</span><span class="si">%i</span><span class="s">, lx(</span><span class="si">%s</span><span class="s">), lx(</span><span class="si">%s</span><span class="s">), </span><span class="si">%s</span><span class="s">, 0x</span><span class="si">%08x</span><span class="s">, 0x</span><span class="si">%08x</span><span class="s">)&quot;</span> <span class="o">%</span> \
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nVersion</span><span class="p">,</span> <span class="n">b2lx</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hashPrevBlock</span><span class="p">),</span> <span class="n">b2lx</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hashMerkleRoot</span><span class="p">),</span>
+                 <span class="bp">self</span><span class="o">.</span><span class="n">nTime</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nBits</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nNonce</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CBlock"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CBlock">[docs]</a><span class="k">class</span> <span class="nc">CBlock</span><span class="p">(</span><span class="n">CBlockHeader</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A block including all transactions in it&quot;&quot;&quot;</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;vtx&#39;</span><span class="p">,</span> <span class="s">&#39;vMerkleTree&#39;</span><span class="p">]</span>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="CBlock.build_merkle_tree_from_txids"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CBlock.build_merkle_tree_from_txids">[docs]</a>    <span class="k">def</span> <span class="nf">build_merkle_tree_from_txids</span><span class="p">(</span><span class="n">txids</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Build a full CBlock merkle tree from txids</span>
+
+<span class="sd">        txids - iterable of txids</span>
+
+<span class="sd">        Returns a new merkle tree in deepest first order. The last element is</span>
+<span class="sd">        the merkle root.</span>
+
+<span class="sd">        WARNING! If you&#39;re reading this because you&#39;re learning about crypto</span>
+<span class="sd">        and/or designing a new system that will use merkle trees, keep in mind</span>
+<span class="sd">        that the following merkle tree algorithm has a serious flaw related to</span>
+<span class="sd">        duplicate txids, resulting in a vulnerability. (CVE-2012-2459) Bitcoin</span>
+<span class="sd">        has since worked around the flaw, but for new applications you should</span>
+<span class="sd">        use something different; don&#39;t just copy-and-paste this code without</span>
+<span class="sd">        understanding the problem first.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">merkle_tree</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">txids</span><span class="p">)</span>
+
+        <span class="n">size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">txids</span><span class="p">)</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="n">i2</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">merkle_tree</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Hash</span><span class="p">(</span><span class="n">merkle_tree</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">merkle_tree</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="n">i2</span><span class="p">]))</span>
+
+            <span class="n">j</span> <span class="o">+=</span> <span class="n">size</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+
+        <span class="k">return</span> <span class="n">merkle_tree</span>
+</div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="CBlock.build_merkle_tree_from_txs"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CBlock.build_merkle_tree_from_txs">[docs]</a>    <span class="k">def</span> <span class="nf">build_merkle_tree_from_txs</span><span class="p">(</span><span class="n">txs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Build a full merkle tree from transactions&quot;&quot;&quot;</span>
+        <span class="n">txids</span> <span class="o">=</span> <span class="p">[</span><span class="n">tx</span><span class="o">.</span><span class="n">GetHash</span><span class="p">()</span> <span class="k">for</span> <span class="n">tx</span> <span class="ow">in</span> <span class="n">txs</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">CBlock</span><span class="o">.</span><span class="n">build_merkle_tree_from_txids</span><span class="p">(</span><span class="n">txids</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CBlock.calc_merkle_root"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CBlock.calc_merkle_root">[docs]</a>    <span class="k">def</span> <span class="nf">calc_merkle_root</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate the merkle root</span>
+
+<span class="sd">        The calculated merkle root is not cached; every invocation</span>
+<span class="sd">        re-calculates it from scratch.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vtx</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Block contains no transactions&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_merkle_tree_from_txs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vtx</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</div>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nVersion</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">hashPrevBlock</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;</span><span class="se">\x00</span><span class="s">&#39;</span><span class="o">*</span><span class="mi">32</span><span class="p">,</span> <span class="n">hashMerkleRoot</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;</span><span class="se">\x00</span><span class="s">&#39;</span><span class="o">*</span><span class="mi">32</span><span class="p">,</span> <span class="n">nTime</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nBits</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nNonce</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vtx</span><span class="o">=</span><span class="p">()):</span>
+        <span class="sd">&quot;&quot;&quot;Create a new block&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CBlock</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">nVersion</span><span class="p">,</span> <span class="n">hashPrevBlock</span><span class="p">,</span> <span class="n">hashMerkleRoot</span><span class="p">,</span> <span class="n">nTime</span><span class="p">,</span> <span class="n">nBits</span><span class="p">,</span> <span class="n">nNonce</span><span class="p">)</span>
+
+        <span class="n">vMerkleTree</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">CBlock</span><span class="o">.</span><span class="n">build_merkle_tree_from_txs</span><span class="p">(</span><span class="n">vtx</span><span class="p">))</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;vMerkleTree&#39;</span><span class="p">,</span> <span class="n">vMerkleTree</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;vtx&#39;</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">CTransaction</span><span class="o">.</span><span class="n">from_tx</span><span class="p">(</span><span class="n">tx</span><span class="p">)</span> <span class="k">for</span> <span class="n">tx</span> <span class="ow">in</span> <span class="n">vtx</span><span class="p">))</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="CBlock.stream_deserialize"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CBlock.stream_deserialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_deserialize</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="bp">self</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">CBlock</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="n">vtx</span> <span class="o">=</span> <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_deserialize</span><span class="p">(</span><span class="n">CTransaction</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">vMerkleTree</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">CBlock</span><span class="o">.</span><span class="n">build_merkle_tree_from_txs</span><span class="p">(</span><span class="n">vtx</span><span class="p">))</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;vMerkleTree&#39;</span><span class="p">,</span> <span class="n">vMerkleTree</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;vtx&#39;</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">vtx</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+</div>
+<div class="viewcode-block" id="CBlock.stream_serialize"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CBlock.stream_serialize">[docs]</a>    <span class="k">def</span> <span class="nf">stream_serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CBlock</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">VectorSerializer</span><span class="o">.</span><span class="n">stream_serialize</span><span class="p">(</span><span class="n">CTransaction</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vtx</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CBlock.get_header"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CBlock.get_header">[docs]</a>    <span class="k">def</span> <span class="nf">get_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the block header</span>
+
+<span class="sd">        Returned header is a new object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">CBlockHeader</span><span class="p">(</span><span class="n">nVersion</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nVersion</span><span class="p">,</span>
+                            <span class="n">hashPrevBlock</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hashPrevBlock</span><span class="p">,</span>
+                            <span class="n">hashMerkleRoot</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hashMerkleRoot</span><span class="p">,</span>
+                            <span class="n">nTime</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nTime</span><span class="p">,</span>
+                            <span class="n">nBits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nBits</span><span class="p">,</span>
+                            <span class="n">nNonce</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nNonce</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CBlock.GetHash"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CBlock.GetHash">[docs]</a>    <span class="k">def</span> <span class="nf">GetHash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the block hash</span>
+
+<span class="sd">        Note that this is the hash of the header, not the entire serialized</span>
+<span class="sd">        block.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_GetHash</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">_cached_GetHash</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_header</span><span class="p">()</span><span class="o">.</span><span class="n">GetHash</span><span class="p">()</span>
+            <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;_cached_GetHash&#39;</span><span class="p">,</span> <span class="n">_cached_GetHash</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">_cached_GetHash</span>
+</div></div>
+<div class="viewcode-block" id="CoreChainParams"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CoreChainParams">[docs]</a><span class="k">class</span> <span class="nc">CoreChainParams</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Define consensus-critical parameters of a given instance of the Bitcoin system&quot;&quot;&quot;</span>
+    <span class="n">MAX_MONEY</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">GENESIS_BLOCK</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">PROOF_OF_WORK_LIMIT</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">SUBSIDY_HALVING_INTERVAL</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">NAME</span> <span class="o">=</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="CoreMainParams"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CoreMainParams">[docs]</a><span class="k">class</span> <span class="nc">CoreMainParams</span><span class="p">(</span><span class="n">CoreChainParams</span><span class="p">):</span>
+    <span class="n">MAX_MONEY</span> <span class="o">=</span> <span class="mi">21000000</span> <span class="o">*</span> <span class="n">COIN</span>
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s">&#39;mainnet&#39;</span>
+    <span class="n">GENESIS_BLOCK</span> <span class="o">=</span> <span class="n">CBlock</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">x</span><span class="p">(</span><span class="s">&#39;0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a29ab5f49ffff001d1dac2b7c0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000&#39;</span><span class="p">))</span>
+    <span class="n">SUBSIDY_HALVING_INTERVAL</span> <span class="o">=</span> <span class="mi">210000</span>
+    <span class="n">PROOF_OF_WORK_LIMIT</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">256</span><span class="o">-</span><span class="mi">1</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span>
+</div>
+<div class="viewcode-block" id="CoreTestNetParams"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CoreTestNetParams">[docs]</a><span class="k">class</span> <span class="nc">CoreTestNetParams</span><span class="p">(</span><span class="n">CoreMainParams</span><span class="p">):</span>
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s">&#39;testnet&#39;</span>
+    <span class="n">GENESIS_BLOCK</span> <span class="o">=</span> <span class="n">CBlock</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">x</span><span class="p">(</span><span class="s">&#39;0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4adae5494dffff001d1aa4ae180101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000&#39;</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="CoreRegTestParams"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CoreRegTestParams">[docs]</a><span class="k">class</span> <span class="nc">CoreRegTestParams</span><span class="p">(</span><span class="n">CoreTestNetParams</span><span class="p">):</span>
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s">&#39;regtest&#39;</span>
+    <span class="n">GENESIS_BLOCK</span> <span class="o">=</span> <span class="n">CBlock</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">x</span><span class="p">(</span><span class="s">&#39;0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4adae5494dffff7f20020000000101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000&#39;</span><span class="p">))</span>
+    <span class="n">SUBSIDY_HALVING_INTERVAL</span> <span class="o">=</span> <span class="mi">150</span>
+    <span class="n">PROOF_OF_WORK_LIMIT</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">256</span><span class="o">-</span><span class="mi">1</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span>
+</div>
+<span class="sd">&quot;&quot;&quot;Master global setting for what core chain params we&#39;re using&quot;&quot;&quot;</span>
+<span class="n">coreparams</span> <span class="o">=</span> <span class="n">CoreMainParams</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">_SelectCoreParams</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Select the core chain parameters to use</span>
+
+<span class="sd">    Don&#39;t use this directly, use bitcoin.SelectParams() instead so both</span>
+<span class="sd">    consensus-critical and general parameters are set properly.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">coreparams</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;mainnet&#39;</span><span class="p">:</span>
+        <span class="n">coreparams</span> <span class="o">=</span> <span class="n">CoreMainParams</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;testnet&#39;</span><span class="p">:</span>
+        <span class="n">coreparams</span> <span class="o">=</span> <span class="n">CoreTestNetParams</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;regtest&#39;</span><span class="p">:</span>
+        <span class="n">coreparams</span> <span class="o">=</span> <span class="n">CoreRegTestParams</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Unknown chain </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="CheckTransactionError"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CheckTransactionError">[docs]</a><span class="k">class</span> <span class="nc">CheckTransactionError</span><span class="p">(</span><span class="n">ValidationError</span><span class="p">):</span>
+    <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="CheckTransaction"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CheckTransaction">[docs]</a><span class="k">def</span> <span class="nf">CheckTransaction</span><span class="p">(</span><span class="n">tx</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Basic transaction checks that don&#39;t depend on any context.</span>
+
+<span class="sd">    Raises CheckTransactionError</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">coreparams</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tx</span><span class="o">.</span><span class="n">vin</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CheckTransactionError</span><span class="p">(</span><span class="s">&quot;CheckTransaction() : vin empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tx</span><span class="o">.</span><span class="n">vout</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CheckTransactionError</span><span class="p">(</span><span class="s">&quot;CheckTransaction() : vout empty&quot;</span><span class="p">)</span>
+
+    <span class="c"># Size limits</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tx</span><span class="o">.</span><span class="n">serialize</span><span class="p">())</span> <span class="o">&gt;</span> <span class="n">MAX_BLOCK_SIZE</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CheckTransactionError</span><span class="p">(</span><span class="s">&quot;CheckTransaction() : size limits failed&quot;</span><span class="p">)</span>
+
+    <span class="c"># Check for negative or overflow output values</span>
+    <span class="n">nValueOut</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">txout</span> <span class="ow">in</span> <span class="n">tx</span><span class="o">.</span><span class="n">vout</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">txout</span><span class="o">.</span><span class="n">nValue</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CheckTransactionError</span><span class="p">(</span><span class="s">&quot;CheckTransaction() : txout.nValue negative&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">txout</span><span class="o">.</span><span class="n">nValue</span> <span class="o">&gt;</span> <span class="n">coreparams</span><span class="o">.</span><span class="n">MAX_MONEY</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CheckTransactionError</span><span class="p">(</span><span class="s">&quot;CheckTransaction() : txout.nValue too high&quot;</span><span class="p">)</span>
+        <span class="n">nValueOut</span> <span class="o">+=</span> <span class="n">txout</span><span class="o">.</span><span class="n">nValue</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">MoneyRange</span><span class="p">(</span><span class="n">nValueOut</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">CheckTransactionError</span><span class="p">(</span><span class="s">&quot;CheckTransaction() : txout total out of range&quot;</span><span class="p">)</span>
+
+    <span class="c"># Check for duplicate inputs</span>
+    <span class="n">vin_outpoints</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">txin</span> <span class="ow">in</span> <span class="n">tx</span><span class="o">.</span><span class="n">vin</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">txin</span><span class="o">.</span><span class="n">prevout</span> <span class="ow">in</span> <span class="n">vin_outpoints</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CheckTransactionError</span><span class="p">(</span><span class="s">&quot;CheckTransaction() : duplicate inputs&quot;</span><span class="p">)</span>
+        <span class="n">vin_outpoints</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">txin</span><span class="o">.</span><span class="n">prevout</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">tx</span><span class="o">.</span><span class="n">is_coinbase</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">2</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tx</span><span class="o">.</span><span class="n">vin</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">scriptSig</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">100</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">CheckTransactionError</span><span class="p">(</span><span class="s">&quot;CheckTransaction() : coinbase script size&quot;</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">txin</span> <span class="ow">in</span> <span class="n">tx</span><span class="o">.</span><span class="n">vin</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">txin</span><span class="o">.</span><span class="n">prevout</span><span class="o">.</span><span class="n">is_null</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">CheckTransactionError</span><span class="p">(</span><span class="s">&quot;CheckTransaction() : prevout is null&quot;</span><span class="p">)</span>
+
+
+
+
+</div>
+<div class="viewcode-block" id="CheckBlockHeaderError"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CheckBlockHeaderError">[docs]</a><span class="k">class</span> <span class="nc">CheckBlockHeaderError</span><span class="p">(</span><span class="n">ValidationError</span><span class="p">):</span>
+    <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="CheckProofOfWorkError"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CheckProofOfWorkError">[docs]</a><span class="k">class</span> <span class="nc">CheckProofOfWorkError</span><span class="p">(</span><span class="n">CheckBlockHeaderError</span><span class="p">):</span>
+    <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="CheckProofOfWork"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CheckProofOfWork">[docs]</a><span class="k">def</span> <span class="nf">CheckProofOfWork</span><span class="p">(</span><span class="nb">hash</span><span class="p">,</span> <span class="n">nBits</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Check a proof-of-work</span>
+
+<span class="sd">    Raises CheckProofOfWorkError</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">uint256_from_compact</span><span class="p">(</span><span class="n">nBits</span><span class="p">)</span>
+
+    <span class="c"># Check range</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;</span> <span class="n">target</span> <span class="o">&lt;=</span> <span class="n">coreparams</span><span class="o">.</span><span class="n">PROOF_OF_WORK_LIMIT</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">CheckProofOfWorkError</span><span class="p">(</span><span class="s">&quot;CheckProofOfWork() : nBits below minimum work&quot;</span><span class="p">)</span>
+
+    <span class="c"># Check proof of work matches claimed amount</span>
+    <span class="nb">hash</span> <span class="o">=</span> <span class="n">uint256_from_str</span><span class="p">(</span><span class="nb">hash</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">hash</span> <span class="o">&gt;</span> <span class="n">target</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CheckProofOfWorkError</span><span class="p">(</span><span class="s">&quot;CheckProofOfWork() : hash doesn&#39;t match nBits&quot;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="CheckBlockHeader"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CheckBlockHeader">[docs]</a><span class="k">def</span> <span class="nf">CheckBlockHeader</span><span class="p">(</span><span class="n">block_header</span><span class="p">,</span> <span class="n">fCheckPoW</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> <span class="n">cur_time</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Context independent CBlockHeader checks.</span>
+
+<span class="sd">    fCheckPoW - Check proof-of-work.</span>
+
+<span class="sd">    cur_time  - Current time. Defaults to time.time()</span>
+
+<span class="sd">    Raises CBlockHeaderError if block header is invalid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">cur_time</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cur_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+    <span class="c"># Check proof-of-work matches claimed amount</span>
+    <span class="k">if</span> <span class="n">fCheckPoW</span><span class="p">:</span>
+        <span class="n">CheckProofOfWork</span><span class="p">(</span><span class="n">block_header</span><span class="o">.</span><span class="n">GetHash</span><span class="p">(),</span> <span class="n">block_header</span><span class="o">.</span><span class="n">nBits</span><span class="p">)</span>
+
+    <span class="c"># Check timestamp</span>
+    <span class="k">if</span> <span class="n">block_header</span><span class="o">.</span><span class="n">nTime</span> <span class="o">&gt;</span> <span class="n">cur_time</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CheckBlockHeaderError</span><span class="p">(</span><span class="s">&quot;CheckBlockHeader() : block timestamp too far in the future&quot;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="CheckBlockError"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CheckBlockError">[docs]</a><span class="k">class</span> <span class="nc">CheckBlockError</span><span class="p">(</span><span class="n">CheckBlockHeaderError</span><span class="p">):</span>
+    <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="GetLegacySigOpCount"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.GetLegacySigOpCount">[docs]</a><span class="k">def</span> <span class="nf">GetLegacySigOpCount</span><span class="p">(</span><span class="n">tx</span><span class="p">):</span>
+    <span class="n">nSigOps</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">txin</span> <span class="ow">in</span> <span class="n">tx</span><span class="o">.</span><span class="n">vin</span><span class="p">:</span>
+        <span class="n">nSigOps</span> <span class="o">+=</span> <span class="n">txin</span><span class="o">.</span><span class="n">scriptSig</span><span class="o">.</span><span class="n">GetSigOpCount</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">txout</span> <span class="ow">in</span> <span class="n">tx</span><span class="o">.</span><span class="n">vout</span><span class="p">:</span>
+        <span class="n">nSigOps</span> <span class="o">+=</span> <span class="n">txout</span><span class="o">.</span><span class="n">scriptPubKey</span><span class="o">.</span><span class="n">GetSigOpCount</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">nSigOps</span>
+
+</div>
+<div class="viewcode-block" id="CheckBlock"><a class="viewcode-back" href="../../bitcoin.core.html#bitcoin.core.CheckBlock">[docs]</a><span class="k">def</span> <span class="nf">CheckBlock</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">fCheckPoW</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> <span class="n">fCheckMerkleRoot</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> <span class="n">cur_time</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Context independent CBlock checks.</span>
+
+<span class="sd">    CheckBlockHeader() is called first, which may raise a CheckBlockHeader</span>
+<span class="sd">    exception, followed the block tests. CheckTransaction() is called for every</span>
+<span class="sd">    transaction.</span>
+
+<span class="sd">    fCheckPoW        - Check proof-of-work.</span>
+
+<span class="sd">    fCheckMerkleRoot - Check merkle root matches transactions.</span>
+
+<span class="sd">    cur_time         - Current time. Defaults to time.time()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Block header checks</span>
+    <span class="n">CheckBlockHeader</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">get_header</span><span class="p">(),</span> <span class="n">fCheckPoW</span><span class="o">=</span><span class="n">fCheckPoW</span><span class="p">,</span> <span class="n">cur_time</span><span class="o">=</span><span class="n">cur_time</span><span class="p">)</span>
+
+    <span class="c"># Size limits</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">block</span><span class="o">.</span><span class="n">vtx</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CheckBlockError</span><span class="p">(</span><span class="s">&quot;CheckBlock() : vtx empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">serialize</span><span class="p">())</span> <span class="o">&gt;</span> <span class="n">MAX_BLOCK_SIZE</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CheckBlockError</span><span class="p">(</span><span class="s">&quot;CheckBlock() : block larger than MAX_BLOCK_SIZE&quot;</span><span class="p">)</span>
+
+    <span class="c"># First transaction must be coinbase</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">block</span><span class="o">.</span><span class="n">vtx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">is_coinbase</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">CheckBlockError</span><span class="p">(</span><span class="s">&quot;CheckBlock() : first tx is not coinbase&quot;</span><span class="p">)</span>
+
+    <span class="c"># Check rest of transactions. Note how we do things &quot;all at once&quot;, which</span>
+    <span class="c"># could potentially be a consensus failure if there was some obscure bug.</span>
+
+    <span class="c"># For unique txid uniqueness testing. If coinbase tx is included twice</span>
+    <span class="c"># it&#39;ll be caught by the &quot;more than one coinbase&quot; test.</span>
+    <span class="n">unique_txids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">nSigOps</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">tx</span> <span class="ow">in</span> <span class="n">block</span><span class="o">.</span><span class="n">vtx</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+        <span class="k">if</span> <span class="n">tx</span><span class="o">.</span><span class="n">is_coinbase</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">CheckBlockError</span><span class="p">(</span><span class="s">&quot;CheckBlock() : more than one coinbase&quot;</span><span class="p">)</span>
+
+        <span class="n">CheckTransaction</span><span class="p">(</span><span class="n">tx</span><span class="p">)</span>
+
+        <span class="n">txid</span> <span class="o">=</span> <span class="n">tx</span><span class="o">.</span><span class="n">GetHash</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">txid</span> <span class="ow">in</span> <span class="n">unique_txids</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CheckBlockError</span><span class="p">(</span><span class="s">&quot;CheckBlock() : duplicate transaction&quot;</span><span class="p">)</span>
+        <span class="n">unique_txids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">txid</span><span class="p">)</span>
+
+        <span class="n">nSigOps</span> <span class="o">+=</span> <span class="n">GetLegacySigOpCount</span><span class="p">(</span><span class="n">tx</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nSigOps</span> <span class="o">&gt;</span> <span class="n">MAX_BLOCK_SIGOPS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CheckBlockError</span><span class="p">(</span><span class="s">&quot;CheckBlock() : out-of-bounds SigOpCount&quot;</span><span class="p">)</span>
+
+    <span class="c"># Check merkle root</span>
+    <span class="k">if</span> <span class="n">fCheckMerkleRoot</span> <span class="ow">and</span> <span class="n">block</span><span class="o">.</span><span class="n">hashMerkleRoot</span> <span class="o">!=</span> <span class="n">block</span><span class="o">.</span><span class="n">calc_merkle_root</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">CheckBlockError</span><span class="p">(</span><span class="s">&quot;CheckBlock() : hashMerkleRoot mismatch&quot;</span><span class="p">)</span>
+</div>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s">&#39;Hash&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Hash160&#39;</span><span class="p">,</span>
+        <span class="s">&#39;COIN&#39;</span><span class="p">,</span>
+        <span class="s">&#39;MAX_BLOCK_SIZE&#39;</span><span class="p">,</span>
+        <span class="s">&#39;MAX_BLOCK_SIGOPS&#39;</span><span class="p">,</span>
+        <span class="s">&#39;MoneyRange&#39;</span><span class="p">,</span>
+        <span class="s">&#39;x&#39;</span><span class="p">,</span>
+        <span class="s">&#39;b2x&#39;</span><span class="p">,</span>
+        <span class="s">&#39;lx&#39;</span><span class="p">,</span>
+        <span class="s">&#39;b2lx&#39;</span><span class="p">,</span>
+        <span class="s">&#39;str_money_value&#39;</span><span class="p">,</span>
+        <span class="s">&#39;ValidationError&#39;</span><span class="p">,</span>
+        <span class="s">&#39;COutPoint&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CMutableOutPoint&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CTxIn&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CMutableTxIn&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CTxOut&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CMutableTxOut&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CTransaction&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CMutableTransaction&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CBlockHeader&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CBlock&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CoreChainParams&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CoreMainParams&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CoreTestNetParams&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CoreRegTestParams&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CheckTransactionError&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CheckTransaction&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CheckBlockHeaderError&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CheckProofOfWorkError&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CheckProofOfWork&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CheckBlockHeader&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CheckBlockError&#39;</span><span class="p">,</span>
+        <span class="s">&#39;GetLegacySigOpCount&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CheckBlock&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../bitcoin.html" >bitcoin</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2012-2015, The python-bitcoinlib developers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

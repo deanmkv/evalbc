@@ -1,0 +1,1374 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>bitcoin.core &mdash; python-bitcoinlib 0.5.1-SNAPSHOT documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.5.1-SNAPSHOT',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="python-bitcoinlib 0.5.1-SNAPSHOT documentation" href="index.html" />
+    <link rel="prev" title="bitcoin" href="bitcoin.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="bitcoin.html" title="bitcoin"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="bitcoin-core">
+<h1>bitcoin.core<a class="headerlink" href="#bitcoin-core" title="Permalink to this headline">¶</a></h1>
+<p>Everything consensus critical is found in the core subpackage.</p>
+<div class="section" id="module-bitcoin.core">
+<span id="core"></span><h2><code class="xref py py-mod docutils literal"><span class="pre">core</span></code><a class="headerlink" href="#module-bitcoin.core" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="bitcoin.core.Hash">
+<code class="descclassname">bitcoin.core.</code><code class="descname">Hash</code><span class="sig-paren">(</span><em>msg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#Hash"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.Hash" title="Permalink to this definition">¶</a></dt>
+<dd><p>SHA256^2)(msg) -&gt; bytes</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.Hash160">
+<code class="descclassname">bitcoin.core.</code><code class="descname">Hash160</code><span class="sig-paren">(</span><em>msg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#Hash160"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.Hash160" title="Permalink to this definition">¶</a></dt>
+<dd><p>RIPEME160(SHA256(msg)) -&gt; bytes</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.MoneyRange">
+<code class="descclassname">bitcoin.core.</code><code class="descname">MoneyRange</code><span class="sig-paren">(</span><em>nValue</em>, <em>params=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#MoneyRange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.MoneyRange" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.x">
+<code class="descclassname">bitcoin.core.</code><code class="descname">x</code><span class="sig-paren">(</span><em>h</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#x"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a hex string to bytes</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.b2x">
+<code class="descclassname">bitcoin.core.</code><code class="descname">b2x</code><span class="sig-paren">(</span><em>b</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#b2x"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.b2x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert bytes to a hex string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.lx">
+<code class="descclassname">bitcoin.core.</code><code class="descname">lx</code><span class="sig-paren">(</span><em>h</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#lx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.lx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a little-endian hex string to bytes</p>
+<p>Lets you write uint256&#8217;s and uint160&#8217;s the way the Satoshi codebase shows
+them.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.b2lx">
+<code class="descclassname">bitcoin.core.</code><code class="descname">b2lx</code><span class="sig-paren">(</span><em>b</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#b2lx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.b2lx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert bytes to a little-endian hex string</p>
+<p>Lets you show uint256&#8217;s and uint160&#8217;s the way the Satoshi codebase shows
+them.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.str_money_value">
+<code class="descclassname">bitcoin.core.</code><code class="descname">str_money_value</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#str_money_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.str_money_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert an integer money value to a fixed point string</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.ValidationError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.</code><code class="descname">ValidationError</code><a class="reference internal" href="_modules/bitcoin/core.html#ValidationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.ValidationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<p>Base class for all blockchain validation errors</p>
+<p>Everything that is related to validating the blockchain, blocks,
+transactions, scripts, etc. is derived from this class.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.COutPoint">
+<em class="property">class </em><code class="descclassname">bitcoin.core.</code><code class="descname">COutPoint</code><span class="sig-paren">(</span><em>hash='x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00'</em>, <em>n=4294967295</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#COutPoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.COutPoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.serialize.ImmutableSerializable" title="bitcoin.core.serialize.ImmutableSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.ImmutableSerializable</span></code></a></p>
+<p>The combination of a transaction hash and an index n into its vout</p>
+<dl class="classmethod">
+<dt id="bitcoin.core.COutPoint.from_outpoint">
+<em class="property">classmethod </em><code class="descname">from_outpoint</code><span class="sig-paren">(</span><em>outpoint</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#COutPoint.from_outpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.COutPoint.from_outpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an immutable copy of an existing OutPoint</p>
+<p>If outpoint is already immutable (outpoint.__class__ is COutPoint) it is
+returned directly.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.COutPoint.hash">
+<code class="descname">hash</code><a class="headerlink" href="#bitcoin.core.COutPoint.hash" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.COutPoint.is_null">
+<code class="descname">is_null</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#COutPoint.is_null"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.COutPoint.is_null" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.COutPoint.n">
+<code class="descname">n</code><a class="headerlink" href="#bitcoin.core.COutPoint.n" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.COutPoint.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#COutPoint.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.COutPoint.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.COutPoint.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#COutPoint.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.COutPoint.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.CMutableOutPoint">
+<em class="property">class </em><code class="descclassname">bitcoin.core.</code><code class="descname">CMutableOutPoint</code><span class="sig-paren">(</span><em>hash='x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00'</em>, <em>n=4294967295</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CMutableOutPoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CMutableOutPoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.COutPoint" title="bitcoin.core.COutPoint"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.COutPoint</span></code></a></p>
+<p>A mutable COutPoint</p>
+<dl class="method">
+<dt id="bitcoin.core.CMutableOutPoint.GetHash">
+<code class="descname">GetHash</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bitcoin.core.CMutableOutPoint.GetHash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the hash of the serialized object</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.CMutableOutPoint.from_outpoint">
+<em class="property">classmethod </em><code class="descname">from_outpoint</code><span class="sig-paren">(</span><em>outpoint</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CMutableOutPoint.from_outpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CMutableOutPoint.from_outpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a mutable copy of an existing COutPoint</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.CTxIn">
+<em class="property">class </em><code class="descclassname">bitcoin.core.</code><code class="descname">CTxIn</code><span class="sig-paren">(</span><em>prevout=COutPoint()</em>, <em>scriptSig=CScript([])</em>, <em>nSequence=4294967295</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CTxIn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CTxIn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.serialize.ImmutableSerializable" title="bitcoin.core.serialize.ImmutableSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.ImmutableSerializable</span></code></a></p>
+<p>An input of a transaction</p>
+<p>Contains the location of the previous transaction&#8217;s output that it claims,
+and a signature that matches the output&#8217;s public key.</p>
+<dl class="classmethod">
+<dt id="bitcoin.core.CTxIn.from_txin">
+<em class="property">classmethod </em><code class="descname">from_txin</code><span class="sig-paren">(</span><em>txin</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CTxIn.from_txin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CTxIn.from_txin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an immutable copy of an existing TxIn</p>
+<p>If txin is already immutable (txin.__class__ is CTxIn) it is returned
+directly.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.CTxIn.is_final">
+<code class="descname">is_final</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CTxIn.is_final"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CTxIn.is_final" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CTxIn.nSequence">
+<code class="descname">nSequence</code><a class="headerlink" href="#bitcoin.core.CTxIn.nSequence" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CTxIn.prevout">
+<code class="descname">prevout</code><a class="headerlink" href="#bitcoin.core.CTxIn.prevout" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CTxIn.scriptSig">
+<code class="descname">scriptSig</code><a class="headerlink" href="#bitcoin.core.CTxIn.scriptSig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.CTxIn.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CTxIn.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CTxIn.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.CTxIn.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CTxIn.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CTxIn.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.CMutableTxIn">
+<em class="property">class </em><code class="descclassname">bitcoin.core.</code><code class="descname">CMutableTxIn</code><span class="sig-paren">(</span><em>prevout=None</em>, <em>scriptSig=CScript([])</em>, <em>nSequence=4294967295</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CMutableTxIn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CMutableTxIn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.CTxIn" title="bitcoin.core.CTxIn"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.CTxIn</span></code></a></p>
+<p>A mutable CTxIn</p>
+<dl class="method">
+<dt id="bitcoin.core.CMutableTxIn.GetHash">
+<code class="descname">GetHash</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bitcoin.core.CMutableTxIn.GetHash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the hash of the serialized object</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.CMutableTxIn.from_txin">
+<em class="property">classmethod </em><code class="descname">from_txin</code><span class="sig-paren">(</span><em>txin</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CMutableTxIn.from_txin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CMutableTxIn.from_txin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a fully mutable copy of an existing TxIn</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.CTxOut">
+<em class="property">class </em><code class="descclassname">bitcoin.core.</code><code class="descname">CTxOut</code><span class="sig-paren">(</span><em>nValue=-1</em>, <em>scriptPubKey=CScript([])</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CTxOut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CTxOut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.serialize.ImmutableSerializable" title="bitcoin.core.serialize.ImmutableSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.ImmutableSerializable</span></code></a></p>
+<p>An output of a transaction</p>
+<p>Contains the public key that the next input must be able to sign with to
+claim it.</p>
+<dl class="classmethod">
+<dt id="bitcoin.core.CTxOut.from_txout">
+<em class="property">classmethod </em><code class="descname">from_txout</code><span class="sig-paren">(</span><em>txout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CTxOut.from_txout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CTxOut.from_txout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an immutable copy of an existing TxOut</p>
+<p>If txout is already immutable (txout.__class__ is CTxOut) then it will
+be returned directly.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.CTxOut.is_valid">
+<code class="descname">is_valid</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CTxOut.is_valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CTxOut.is_valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CTxOut.nValue">
+<code class="descname">nValue</code><a class="headerlink" href="#bitcoin.core.CTxOut.nValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CTxOut.scriptPubKey">
+<code class="descname">scriptPubKey</code><a class="headerlink" href="#bitcoin.core.CTxOut.scriptPubKey" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.CTxOut.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CTxOut.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CTxOut.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.CTxOut.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CTxOut.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CTxOut.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.CMutableTxOut">
+<em class="property">class </em><code class="descclassname">bitcoin.core.</code><code class="descname">CMutableTxOut</code><span class="sig-paren">(</span><em>nValue=-1</em>, <em>scriptPubKey=CScript([])</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CMutableTxOut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CMutableTxOut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.CTxOut" title="bitcoin.core.CTxOut"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.CTxOut</span></code></a></p>
+<p>A mutable CTxOut</p>
+<dl class="method">
+<dt id="bitcoin.core.CMutableTxOut.GetHash">
+<code class="descname">GetHash</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bitcoin.core.CMutableTxOut.GetHash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the hash of the serialized object</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.CMutableTxOut.from_txout">
+<em class="property">classmethod </em><code class="descname">from_txout</code><span class="sig-paren">(</span><em>txout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CMutableTxOut.from_txout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CMutableTxOut.from_txout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a fullly mutable copy of an existing TxOut</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.CTransaction">
+<em class="property">class </em><code class="descclassname">bitcoin.core.</code><code class="descname">CTransaction</code><span class="sig-paren">(</span><em>vin=()</em>, <em>vout=()</em>, <em>nLockTime=0</em>, <em>nVersion=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CTransaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CTransaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.serialize.ImmutableSerializable" title="bitcoin.core.serialize.ImmutableSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.ImmutableSerializable</span></code></a></p>
+<p>A transaction</p>
+<p>Create a new transaction</p>
+<p>vin and vout are iterables of transaction inputs and outputs
+respectively. If their contents are not already immutable, immutable
+copies will be made.</p>
+<dl class="classmethod">
+<dt id="bitcoin.core.CTransaction.from_tx">
+<em class="property">classmethod </em><code class="descname">from_tx</code><span class="sig-paren">(</span><em>tx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CTransaction.from_tx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CTransaction.from_tx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an immutable copy of a pre-existing transaction</p>
+<p>If tx is already immutable (tx.__class__ is CTransaction) then it will
+be returned directly.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.CTransaction.is_coinbase">
+<code class="descname">is_coinbase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CTransaction.is_coinbase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CTransaction.is_coinbase" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CTransaction.nLockTime">
+<code class="descname">nLockTime</code><a class="headerlink" href="#bitcoin.core.CTransaction.nLockTime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CTransaction.nVersion">
+<code class="descname">nVersion</code><a class="headerlink" href="#bitcoin.core.CTransaction.nVersion" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.CTransaction.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CTransaction.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CTransaction.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.CTransaction.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CTransaction.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CTransaction.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CTransaction.vin">
+<code class="descname">vin</code><a class="headerlink" href="#bitcoin.core.CTransaction.vin" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CTransaction.vout">
+<code class="descname">vout</code><a class="headerlink" href="#bitcoin.core.CTransaction.vout" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.CMutableTransaction">
+<em class="property">class </em><code class="descclassname">bitcoin.core.</code><code class="descname">CMutableTransaction</code><span class="sig-paren">(</span><em>vin=None</em>, <em>vout=None</em>, <em>nLockTime=0</em>, <em>nVersion=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CMutableTransaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CMutableTransaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.CTransaction" title="bitcoin.core.CTransaction"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.CTransaction</span></code></a></p>
+<p>A mutable transaction</p>
+<dl class="method">
+<dt id="bitcoin.core.CMutableTransaction.GetHash">
+<code class="descname">GetHash</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bitcoin.core.CMutableTransaction.GetHash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the hash of the serialized object</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.CMutableTransaction.from_tx">
+<em class="property">classmethod </em><code class="descname">from_tx</code><span class="sig-paren">(</span><em>tx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CMutableTransaction.from_tx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CMutableTransaction.from_tx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a fully mutable copy of a pre-existing transaction</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.CBlockHeader">
+<em class="property">class </em><code class="descclassname">bitcoin.core.</code><code class="descname">CBlockHeader</code><span class="sig-paren">(</span><em>nVersion=2</em>, <em>hashPrevBlock='x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00'</em>, <em>hashMerkleRoot='x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00'</em>, <em>nTime=0</em>, <em>nBits=0</em>, <em>nNonce=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CBlockHeader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CBlockHeader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.serialize.ImmutableSerializable" title="bitcoin.core.serialize.ImmutableSerializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.ImmutableSerializable</span></code></a></p>
+<p>A block header</p>
+<dl class="staticmethod">
+<dt id="bitcoin.core.CBlockHeader.calc_difficulty">
+<em class="property">static </em><code class="descname">calc_difficulty</code><span class="sig-paren">(</span><em>nBits</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CBlockHeader.calc_difficulty"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CBlockHeader.calc_difficulty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate difficulty from nBits target</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CBlockHeader.difficulty">
+<code class="descname">difficulty</code><a class="headerlink" href="#bitcoin.core.CBlockHeader.difficulty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CBlockHeader.hashMerkleRoot">
+<code class="descname">hashMerkleRoot</code><a class="headerlink" href="#bitcoin.core.CBlockHeader.hashMerkleRoot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CBlockHeader.hashPrevBlock">
+<code class="descname">hashPrevBlock</code><a class="headerlink" href="#bitcoin.core.CBlockHeader.hashPrevBlock" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CBlockHeader.nBits">
+<code class="descname">nBits</code><a class="headerlink" href="#bitcoin.core.CBlockHeader.nBits" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CBlockHeader.nNonce">
+<code class="descname">nNonce</code><a class="headerlink" href="#bitcoin.core.CBlockHeader.nNonce" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CBlockHeader.nTime">
+<code class="descname">nTime</code><a class="headerlink" href="#bitcoin.core.CBlockHeader.nTime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CBlockHeader.nVersion">
+<code class="descname">nVersion</code><a class="headerlink" href="#bitcoin.core.CBlockHeader.nVersion" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.CBlockHeader.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CBlockHeader.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CBlockHeader.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.CBlockHeader.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CBlockHeader.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CBlockHeader.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.CBlock">
+<em class="property">class </em><code class="descclassname">bitcoin.core.</code><code class="descname">CBlock</code><span class="sig-paren">(</span><em>nVersion=2</em>, <em>hashPrevBlock='x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00'</em>, <em>hashMerkleRoot='x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00x00'</em>, <em>nTime=0</em>, <em>nBits=0</em>, <em>nNonce=0</em>, <em>vtx=()</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CBlock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CBlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.CBlockHeader" title="bitcoin.core.CBlockHeader"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.CBlockHeader</span></code></a></p>
+<p>A block including all transactions in it</p>
+<p>Create a new block</p>
+<dl class="method">
+<dt id="bitcoin.core.CBlock.GetHash">
+<code class="descname">GetHash</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CBlock.GetHash"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CBlock.GetHash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the block hash</p>
+<p>Note that this is the hash of the header, not the entire serialized
+block.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="bitcoin.core.CBlock.build_merkle_tree_from_txids">
+<em class="property">static </em><code class="descname">build_merkle_tree_from_txids</code><span class="sig-paren">(</span><em>txids</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CBlock.build_merkle_tree_from_txids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CBlock.build_merkle_tree_from_txids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a full CBlock merkle tree from txids</p>
+<p>txids - iterable of txids</p>
+<p>Returns a new merkle tree in deepest first order. The last element is
+the merkle root.</p>
+<p>WARNING! If you&#8217;re reading this because you&#8217;re learning about crypto
+and/or designing a new system that will use merkle trees, keep in mind
+that the following merkle tree algorithm has a serious flaw related to
+duplicate txids, resulting in a vulnerability. (CVE-2012-2459) Bitcoin
+has since worked around the flaw, but for new applications you should
+use something different; don&#8217;t just copy-and-paste this code without
+understanding the problem first.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="bitcoin.core.CBlock.build_merkle_tree_from_txs">
+<em class="property">static </em><code class="descname">build_merkle_tree_from_txs</code><span class="sig-paren">(</span><em>txs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CBlock.build_merkle_tree_from_txs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CBlock.build_merkle_tree_from_txs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a full merkle tree from transactions</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.CBlock.calc_merkle_root">
+<code class="descname">calc_merkle_root</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CBlock.calc_merkle_root"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CBlock.calc_merkle_root" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the merkle root</p>
+<p>The calculated merkle root is not cached; every invocation
+re-calculates it from scratch.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.CBlock.get_header">
+<code class="descname">get_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CBlock.get_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CBlock.get_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the block header</p>
+<p>Returned header is a new object.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.CBlock.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CBlock.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CBlock.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.CBlock.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CBlock.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CBlock.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CBlock.vMerkleTree">
+<code class="descname">vMerkleTree</code><a class="headerlink" href="#bitcoin.core.CBlock.vMerkleTree" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CBlock.vtx">
+<code class="descname">vtx</code><a class="headerlink" href="#bitcoin.core.CBlock.vtx" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.CoreChainParams">
+<em class="property">class </em><code class="descclassname">bitcoin.core.</code><code class="descname">CoreChainParams</code><a class="reference internal" href="_modules/bitcoin/core.html#CoreChainParams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CoreChainParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Define consensus-critical parameters of a given instance of the Bitcoin system</p>
+<dl class="attribute">
+<dt id="bitcoin.core.CoreChainParams.GENESIS_BLOCK">
+<code class="descname">GENESIS_BLOCK</code><em class="property"> = None</em><a class="headerlink" href="#bitcoin.core.CoreChainParams.GENESIS_BLOCK" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CoreChainParams.MAX_MONEY">
+<code class="descname">MAX_MONEY</code><em class="property"> = None</em><a class="headerlink" href="#bitcoin.core.CoreChainParams.MAX_MONEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CoreChainParams.NAME">
+<code class="descname">NAME</code><em class="property"> = None</em><a class="headerlink" href="#bitcoin.core.CoreChainParams.NAME" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CoreChainParams.PROOF_OF_WORK_LIMIT">
+<code class="descname">PROOF_OF_WORK_LIMIT</code><em class="property"> = None</em><a class="headerlink" href="#bitcoin.core.CoreChainParams.PROOF_OF_WORK_LIMIT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CoreChainParams.SUBSIDY_HALVING_INTERVAL">
+<code class="descname">SUBSIDY_HALVING_INTERVAL</code><em class="property"> = None</em><a class="headerlink" href="#bitcoin.core.CoreChainParams.SUBSIDY_HALVING_INTERVAL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.CoreMainParams">
+<em class="property">class </em><code class="descclassname">bitcoin.core.</code><code class="descname">CoreMainParams</code><a class="reference internal" href="_modules/bitcoin/core.html#CoreMainParams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CoreMainParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.CoreChainParams" title="bitcoin.core.CoreChainParams"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.CoreChainParams</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.core.CoreMainParams.GENESIS_BLOCK">
+<code class="descname">GENESIS_BLOCK</code><em class="property"> = CBlock(1, lx(0000000000000000000000000000000000000000000000000000000000000000), lx(4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b), 1231006505, 0x1d00ffff, 0x7c2bac1d)</em><a class="headerlink" href="#bitcoin.core.CoreMainParams.GENESIS_BLOCK" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CoreMainParams.MAX_MONEY">
+<code class="descname">MAX_MONEY</code><em class="property"> = 2100000000000000</em><a class="headerlink" href="#bitcoin.core.CoreMainParams.MAX_MONEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CoreMainParams.NAME">
+<code class="descname">NAME</code><em class="property"> = 'mainnet'</em><a class="headerlink" href="#bitcoin.core.CoreMainParams.NAME" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CoreMainParams.PROOF_OF_WORK_LIMIT">
+<code class="descname">PROOF_OF_WORK_LIMIT</code><em class="property"> = 26959946667150639794667015087019630673637144422540572481103610249215L</em><a class="headerlink" href="#bitcoin.core.CoreMainParams.PROOF_OF_WORK_LIMIT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CoreMainParams.SUBSIDY_HALVING_INTERVAL">
+<code class="descname">SUBSIDY_HALVING_INTERVAL</code><em class="property"> = 210000</em><a class="headerlink" href="#bitcoin.core.CoreMainParams.SUBSIDY_HALVING_INTERVAL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.CoreTestNetParams">
+<em class="property">class </em><code class="descclassname">bitcoin.core.</code><code class="descname">CoreTestNetParams</code><a class="reference internal" href="_modules/bitcoin/core.html#CoreTestNetParams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CoreTestNetParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.CoreMainParams" title="bitcoin.core.CoreMainParams"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.CoreMainParams</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.core.CoreTestNetParams.GENESIS_BLOCK">
+<code class="descname">GENESIS_BLOCK</code><em class="property"> = CBlock(1, lx(0000000000000000000000000000000000000000000000000000000000000000), lx(4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b), 1296688602, 0x1d00ffff, 0x18aea41a)</em><a class="headerlink" href="#bitcoin.core.CoreTestNetParams.GENESIS_BLOCK" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CoreTestNetParams.NAME">
+<code class="descname">NAME</code><em class="property"> = 'testnet'</em><a class="headerlink" href="#bitcoin.core.CoreTestNetParams.NAME" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.CoreRegTestParams">
+<em class="property">class </em><code class="descclassname">bitcoin.core.</code><code class="descname">CoreRegTestParams</code><a class="reference internal" href="_modules/bitcoin/core.html#CoreRegTestParams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CoreRegTestParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.CoreTestNetParams" title="bitcoin.core.CoreTestNetParams"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.CoreTestNetParams</span></code></a></p>
+<dl class="attribute">
+<dt id="bitcoin.core.CoreRegTestParams.GENESIS_BLOCK">
+<code class="descname">GENESIS_BLOCK</code><em class="property"> = CBlock(1, lx(0000000000000000000000000000000000000000000000000000000000000000), lx(4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b), 1296688602, 0x207fffff, 0x00000002)</em><a class="headerlink" href="#bitcoin.core.CoreRegTestParams.GENESIS_BLOCK" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CoreRegTestParams.NAME">
+<code class="descname">NAME</code><em class="property"> = 'regtest'</em><a class="headerlink" href="#bitcoin.core.CoreRegTestParams.NAME" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CoreRegTestParams.PROOF_OF_WORK_LIMIT">
+<code class="descname">PROOF_OF_WORK_LIMIT</code><em class="property"> = 57896044618658097711785492504343953926634992332820282019728792003956564819967L</em><a class="headerlink" href="#bitcoin.core.CoreRegTestParams.PROOF_OF_WORK_LIMIT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.CoreRegTestParams.SUBSIDY_HALVING_INTERVAL">
+<code class="descname">SUBSIDY_HALVING_INTERVAL</code><em class="property"> = 150</em><a class="headerlink" href="#bitcoin.core.CoreRegTestParams.SUBSIDY_HALVING_INTERVAL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.CheckTransactionError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.</code><code class="descname">CheckTransactionError</code><a class="reference internal" href="_modules/bitcoin/core.html#CheckTransactionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CheckTransactionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.ValidationError" title="bitcoin.core.ValidationError"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.ValidationError</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.CheckTransaction">
+<code class="descclassname">bitcoin.core.</code><code class="descname">CheckTransaction</code><span class="sig-paren">(</span><em>tx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CheckTransaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CheckTransaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Basic transaction checks that don&#8217;t depend on any context.</p>
+<p>Raises CheckTransactionError</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.CheckBlockHeaderError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.</code><code class="descname">CheckBlockHeaderError</code><a class="reference internal" href="_modules/bitcoin/core.html#CheckBlockHeaderError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CheckBlockHeaderError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.ValidationError" title="bitcoin.core.ValidationError"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.ValidationError</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.CheckProofOfWorkError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.</code><code class="descname">CheckProofOfWorkError</code><a class="reference internal" href="_modules/bitcoin/core.html#CheckProofOfWorkError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CheckProofOfWorkError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.CheckBlockHeaderError" title="bitcoin.core.CheckBlockHeaderError"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.CheckBlockHeaderError</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.CheckProofOfWork">
+<code class="descclassname">bitcoin.core.</code><code class="descname">CheckProofOfWork</code><span class="sig-paren">(</span><em>hash</em>, <em>nBits</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CheckProofOfWork"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CheckProofOfWork" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check a proof-of-work</p>
+<p>Raises CheckProofOfWorkError</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.CheckBlockHeader">
+<code class="descclassname">bitcoin.core.</code><code class="descname">CheckBlockHeader</code><span class="sig-paren">(</span><em>block_header</em>, <em>fCheckPoW=True</em>, <em>cur_time=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CheckBlockHeader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CheckBlockHeader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Context independent CBlockHeader checks.</p>
+<p>fCheckPoW - Check proof-of-work.</p>
+<p>cur_time  - Current time. Defaults to time.time()</p>
+<p>Raises CBlockHeaderError if block header is invalid.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.CheckBlockError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.</code><code class="descname">CheckBlockError</code><a class="reference internal" href="_modules/bitcoin/core.html#CheckBlockError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CheckBlockError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.CheckBlockHeaderError" title="bitcoin.core.CheckBlockHeaderError"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.CheckBlockHeaderError</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.GetLegacySigOpCount">
+<code class="descclassname">bitcoin.core.</code><code class="descname">GetLegacySigOpCount</code><span class="sig-paren">(</span><em>tx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#GetLegacySigOpCount"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.GetLegacySigOpCount" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.CheckBlock">
+<code class="descclassname">bitcoin.core.</code><code class="descname">CheckBlock</code><span class="sig-paren">(</span><em>block</em>, <em>fCheckPoW=True</em>, <em>fCheckMerkleRoot=True</em>, <em>cur_time=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core.html#CheckBlock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.CheckBlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Context independent CBlock checks.</p>
+<p>CheckBlockHeader() is called first, which may raise a CheckBlockHeader
+exception, followed the block tests. CheckTransaction() is called for every
+transaction.</p>
+<p>fCheckPoW        - Check proof-of-work.</p>
+<p>fCheckMerkleRoot - Check merkle root matches transactions.</p>
+<p>cur_time         - Current time. Defaults to time.time()</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-bitcoin.core.key">
+<span id="key"></span><h2><code class="xref py py-mod docutils literal"><span class="pre">key</span></code><a class="headerlink" href="#module-bitcoin.core.key" title="Permalink to this headline">¶</a></h2>
+<p>ECC secp256k1 crypto routines</p>
+<p>WARNING: This module does not mlock() secrets; your private keys may end up on
+disk in swap! Use with caution!</p>
+<dl class="class">
+<dt id="bitcoin.core.key.CECKey">
+<em class="property">class </em><code class="descclassname">bitcoin.core.key.</code><code class="descname">CECKey</code><a class="reference internal" href="_modules/bitcoin/core/key.html#CECKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CECKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper around OpenSSL&#8217;s EC_KEY</p>
+<dl class="attribute">
+<dt id="bitcoin.core.key.CECKey.POINT_CONVERSION_COMPRESSED">
+<code class="descname">POINT_CONVERSION_COMPRESSED</code><em class="property"> = 2</em><a class="headerlink" href="#bitcoin.core.key.CECKey.POINT_CONVERSION_COMPRESSED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.key.CECKey.POINT_CONVERSION_UNCOMPRESSED">
+<code class="descname">POINT_CONVERSION_UNCOMPRESSED</code><em class="property"> = 4</em><a class="headerlink" href="#bitcoin.core.key.CECKey.POINT_CONVERSION_UNCOMPRESSED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.key.CECKey.get_ecdh_key">
+<code class="descname">get_ecdh_key</code><span class="sig-paren">(</span><em>other_pubkey</em>, <em>kdf=&lt;function &lt;lambda&gt;&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/key.html#CECKey.get_ecdh_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CECKey.get_ecdh_key" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.key.CECKey.get_privkey">
+<code class="descname">get_privkey</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/key.html#CECKey.get_privkey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CECKey.get_privkey" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.key.CECKey.get_pubkey">
+<code class="descname">get_pubkey</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/key.html#CECKey.get_pubkey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CECKey.get_pubkey" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.key.CECKey.get_raw_ecdh_key">
+<code class="descname">get_raw_ecdh_key</code><span class="sig-paren">(</span><em>other_pubkey</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/key.html#CECKey.get_raw_ecdh_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CECKey.get_raw_ecdh_key" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.key.CECKey.recover">
+<code class="descname">recover</code><span class="sig-paren">(</span><em>sigR</em>, <em>sigS</em>, <em>msg</em>, <em>msglen</em>, <em>recid</em>, <em>check</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/key.html#CECKey.recover"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CECKey.recover" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform ECDSA key recovery (see SEC1 4.1.6) for curves over (mod p)-fields</p>
+<p>recid selects which key is recovered</p>
+<p>if check is non-zero, additional checks are performed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.key.CECKey.set_compressed">
+<code class="descname">set_compressed</code><span class="sig-paren">(</span><em>compressed</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/key.html#CECKey.set_compressed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CECKey.set_compressed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.key.CECKey.set_privkey">
+<code class="descname">set_privkey</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/key.html#CECKey.set_privkey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CECKey.set_privkey" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.key.CECKey.set_pubkey">
+<code class="descname">set_pubkey</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/key.html#CECKey.set_pubkey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CECKey.set_pubkey" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.key.CECKey.set_secretbytes">
+<code class="descname">set_secretbytes</code><span class="sig-paren">(</span><em>secret</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/key.html#CECKey.set_secretbytes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CECKey.set_secretbytes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.key.CECKey.sign">
+<code class="descname">sign</code><span class="sig-paren">(</span><em>hash</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/key.html#CECKey.sign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CECKey.sign" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.key.CECKey.sign_compact">
+<code class="descname">sign_compact</code><span class="sig-paren">(</span><em>hash</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/key.html#CECKey.sign_compact"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CECKey.sign_compact" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.key.CECKey.signature_to_low_s">
+<code class="descname">signature_to_low_s</code><span class="sig-paren">(</span><em>sig</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/key.html#CECKey.signature_to_low_s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CECKey.signature_to_low_s" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.key.CECKey.verify">
+<code class="descname">verify</code><span class="sig-paren">(</span><em>hash</em>, <em>sig</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/key.html#CECKey.verify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CECKey.verify" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify a DER signature</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.key.CPubKey">
+<em class="property">class </em><code class="descclassname">bitcoin.core.key.</code><code class="descname">CPubKey</code><a class="reference internal" href="_modules/bitcoin/core/key.html#CPubKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CPubKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">str</span></code></p>
+<p>An encapsulated public key</p>
+<p>Attributes:</p>
+<p>is_valid      - Corresponds to CPubKey.IsValid()</p>
+<p>is_fullyvalid - Corresponds to CPubKey.IsFullyValid()</p>
+<p>is_compressed - Corresponds to CPubKey.IsCompressed()</p>
+<dl class="attribute">
+<dt id="bitcoin.core.key.CPubKey.is_compressed">
+<code class="descname">is_compressed</code><a class="headerlink" href="#bitcoin.core.key.CPubKey.is_compressed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="bitcoin.core.key.CPubKey.is_valid">
+<code class="descname">is_valid</code><a class="headerlink" href="#bitcoin.core.key.CPubKey.is_valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.key.CPubKey.recover_compact">
+<em class="property">classmethod </em><code class="descname">recover_compact</code><span class="sig-paren">(</span><em>hash</em>, <em>sig</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/key.html#CPubKey.recover_compact"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CPubKey.recover_compact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recover a public key from a compact signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.key.CPubKey.verify">
+<code class="descname">verify</code><span class="sig-paren">(</span><em>hash</em>, <em>sig</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/key.html#CPubKey.verify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.key.CPubKey.verify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-bitcoin.core.script">
+<span id="script"></span><h2><code class="xref py py-mod docutils literal"><span class="pre">script</span></code><a class="headerlink" href="#module-bitcoin.core.script" title="Permalink to this headline">¶</a></h2>
+<p>Scripts</p>
+<p>Functionality to build scripts, as well as SignatureHash(). Script evaluation
+is in bitcoin.core.scripteval</p>
+<dl class="class">
+<dt id="bitcoin.core.script.CScriptOp">
+<em class="property">class </em><code class="descclassname">bitcoin.core.script.</code><code class="descname">CScriptOp</code><a class="reference internal" href="_modules/bitcoin/core/script.html#CScriptOp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScriptOp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">int</span></code></p>
+<p>A single script opcode</p>
+<dl class="method">
+<dt id="bitcoin.core.script.CScriptOp.decode_op_n">
+<code class="descname">decode_op_n</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#CScriptOp.decode_op_n"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScriptOp.decode_op_n" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decode a small integer opcode, returning an integer</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="bitcoin.core.script.CScriptOp.encode_op_n">
+<em class="property">static </em><code class="descname">encode_op_n</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#CScriptOp.encode_op_n"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScriptOp.encode_op_n" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encode a small integer op, returning an opcode</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="bitcoin.core.script.CScriptOp.encode_op_pushdata">
+<em class="property">static </em><code class="descname">encode_op_pushdata</code><span class="sig-paren">(</span><em>d</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#CScriptOp.encode_op_pushdata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScriptOp.encode_op_pushdata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encode a PUSHDATA op, returning bytes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.script.CScriptOp.is_small_int">
+<code class="descname">is_small_int</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#CScriptOp.is_small_int"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScriptOp.is_small_int" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return true if the op pushes a small integer to the stack</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.script.CScriptInvalidError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.script.</code><code class="descname">CScriptInvalidError</code><a class="reference internal" href="_modules/bitcoin/core/script.html#CScriptInvalidError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScriptInvalidError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<p>Base class for CScript exceptions</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.script.CScriptTruncatedPushDataError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.script.</code><code class="descname">CScriptTruncatedPushDataError</code><span class="sig-paren">(</span><em>msg</em>, <em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#CScriptTruncatedPushDataError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScriptTruncatedPushDataError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.script.CScriptInvalidError" title="bitcoin.core.script.CScriptInvalidError"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.script.CScriptInvalidError</span></code></a></p>
+<p>Invalid pushdata due to truncation</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.script.CScript">
+<em class="property">class </em><code class="descclassname">bitcoin.core.script.</code><code class="descname">CScript</code><a class="reference internal" href="_modules/bitcoin/core/script.html#CScript"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScript" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">str</span></code></p>
+<p>Serialized script</p>
+<p>A bytes subclass, so you can use this directly whenever bytes are accepted.
+Note that this means that indexing does <em>not</em> work - you&#8217;ll get an index by
+byte rather than opcode. This format was chosen for efficiency so that the
+general case would not require creating a lot of little CScriptOP objects.</p>
+<p>iter(script) however does iterate by opcode.</p>
+<dl class="method">
+<dt id="bitcoin.core.script.CScript.GetSigOpCount">
+<code class="descname">GetSigOpCount</code><span class="sig-paren">(</span><em>fAccurate</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#CScript.GetSigOpCount"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScript.GetSigOpCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the SigOp count.</p>
+<p>fAccurate - Accurately count CHECKMULTISIG, see BIP16 for details.</p>
+<p>Note that this is consensus-critical.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.script.CScript.has_canonical_pushes">
+<code class="descname">has_canonical_pushes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#CScript.has_canonical_pushes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScript.has_canonical_pushes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if script only uses canonical pushes</p>
+<p>Not yet consensus critical; may be in the future.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.script.CScript.is_p2sh">
+<code class="descname">is_p2sh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#CScript.is_p2sh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScript.is_p2sh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if the script is a p2sh scriptPubKey</p>
+<p>Note that this test is consensus-critical.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.script.CScript.is_push_only">
+<code class="descname">is_push_only</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#CScript.is_push_only"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScript.is_push_only" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if the script only contains pushdata ops</p>
+<p>Note that this test is consensus-critical.</p>
+<p>Scripts that contain invalid pushdata ops return False, matching the
+behavior in Bitcoin Core.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.script.CScript.is_unspendable">
+<code class="descname">is_unspendable</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#CScript.is_unspendable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScript.is_unspendable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if the script is provably unspendable</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.script.CScript.is_valid">
+<code class="descname">is_valid</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#CScript.is_valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScript.is_valid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the script is valid, False otherwise</p>
+<p>The script is valid if all PUSHDATA&#8217;s are valid; invalid opcodes do not
+make is_valid() return False.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.script.CScript.join">
+<code class="descname">join</code><span class="sig-paren">(</span><em>iterable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#CScript.join"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScript.join" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.script.CScript.raw_iter">
+<code class="descname">raw_iter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#CScript.raw_iter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScript.raw_iter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raw iteration</p>
+<p>Yields tuples of (opcode, data, sop_idx) so that the different possible
+PUSHDATA encodings can be accurately distinguished, as well as
+determining the exact opcode byte indexes. (sop_idx)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.script.CScript.to_p2sh_scriptPubKey">
+<code class="descname">to_p2sh_scriptPubKey</code><span class="sig-paren">(</span><em>checksize=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#CScript.to_p2sh_scriptPubKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.CScript.to_p2sh_scriptPubKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create P2SH scriptPubKey from this redeemScript</p>
+<p>That is, create the P2SH scriptPubKey that requires this script as a
+redeemScript to spend.</p>
+<p>checksize - Check if the redeemScript is larger than the 520-byte max
+pushdata limit; raise ValueError if limit exceeded.</p>
+<p>Since a &gt;520-byte PUSHDATA makes EvalScript() fail, it&#8217;s not actually
+possible to redeem P2SH outputs with redeem scripts &gt;520 bytes.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.script.FindAndDelete">
+<code class="descclassname">bitcoin.core.script.</code><code class="descname">FindAndDelete</code><span class="sig-paren">(</span><em>script</em>, <em>sig</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#FindAndDelete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.FindAndDelete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Consensus critical, see FindAndDelete() in Satoshi codebase</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.script.RawSignatureHash">
+<code class="descclassname">bitcoin.core.script.</code><code class="descname">RawSignatureHash</code><span class="sig-paren">(</span><em>script</em>, <em>txTo</em>, <em>inIdx</em>, <em>hashtype</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#RawSignatureHash"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.RawSignatureHash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Consensus-correct SignatureHash</p>
+<p>Returns (hash, err) to precisely match the consensus-critical behavior of
+the SIGHASH_SINGLE bug. (inIdx is <em>not</em> checked for validity)</p>
+<p>If you&#8217;re just writing wallet software you probably want SignatureHash()
+instead.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.script.SignatureHash">
+<code class="descclassname">bitcoin.core.script.</code><code class="descname">SignatureHash</code><span class="sig-paren">(</span><em>script</em>, <em>txTo</em>, <em>inIdx</em>, <em>hashtype</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#SignatureHash"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.SignatureHash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate a signature hash</p>
+<p>&#8216;Cooked&#8217; version that checks if inIdx is out of bounds - this is <em>not</em>
+consensus-correct behavior, but is what you probably want for general
+wallet use.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.script.IsLowDERSignature">
+<code class="descclassname">bitcoin.core.script.</code><code class="descname">IsLowDERSignature</code><span class="sig-paren">(</span><em>sig</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/script.html#IsLowDERSignature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.script.IsLowDERSignature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loosely correlates with IsLowDERSignature() from script/interpreter.cpp
+Verifies that the S value in a DER signature is the lowest possible value.
+Used by BIP62 malleability fixes.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-bitcoin.core.scripteval">
+<span id="scripteval"></span><h2><code class="xref py py-mod docutils literal"><span class="pre">scripteval</span></code><a class="headerlink" href="#module-bitcoin.core.scripteval" title="Permalink to this headline">¶</a></h2>
+<p>Script evaluation</p>
+<p>Be warned that there are highly likely to be consensus bugs in this code; it is
+unlikely to match Satoshi Bitcoin exactly. Think carefully before using this
+module.</p>
+<dl class="exception">
+<dt id="bitcoin.core.scripteval.EvalScriptError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.scripteval.</code><code class="descname">EvalScriptError</code><span class="sig-paren">(</span><em>msg</em>, <em>sop=None</em>, <em>sop_data=None</em>, <em>sop_pc=None</em>, <em>stack=None</em>, <em>scriptIn=None</em>, <em>txTo=None</em>, <em>inIdx=None</em>, <em>flags=None</em>, <em>altstack=None</em>, <em>vfExec=None</em>, <em>pbegincodehash=None</em>, <em>nOpCount=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/scripteval.html#EvalScriptError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.scripteval.EvalScriptError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.ValidationError" title="bitcoin.core.ValidationError"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.ValidationError</span></code></a></p>
+<p>Base class for exceptions raised when a script fails during EvalScript()</p>
+<p>The execution state just prior the opcode raising the is saved. (if
+available)</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.scripteval.MaxOpCountError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.scripteval.</code><code class="descname">MaxOpCountError</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/scripteval.html#MaxOpCountError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.scripteval.MaxOpCountError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.scripteval.EvalScriptError" title="bitcoin.core.scripteval.EvalScriptError"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.scripteval.EvalScriptError</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.scripteval.MissingOpArgumentsError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.scripteval.</code><code class="descname">MissingOpArgumentsError</code><span class="sig-paren">(</span><em>opcode</em>, <em>s</em>, <em>n</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/scripteval.html#MissingOpArgumentsError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.scripteval.MissingOpArgumentsError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.scripteval.EvalScriptError" title="bitcoin.core.scripteval.EvalScriptError"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.scripteval.EvalScriptError</span></code></a></p>
+<p>Missing arguments</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.scripteval.ArgumentsInvalidError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.scripteval.</code><code class="descname">ArgumentsInvalidError</code><span class="sig-paren">(</span><em>opcode</em>, <em>msg</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/scripteval.html#ArgumentsInvalidError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.scripteval.ArgumentsInvalidError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.scripteval.EvalScriptError" title="bitcoin.core.scripteval.EvalScriptError"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.scripteval.EvalScriptError</span></code></a></p>
+<p>Arguments are invalid</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.scripteval.VerifyOpFailedError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.scripteval.</code><code class="descname">VerifyOpFailedError</code><span class="sig-paren">(</span><em>opcode</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/scripteval.html#VerifyOpFailedError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.scripteval.VerifyOpFailedError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.scripteval.EvalScriptError" title="bitcoin.core.scripteval.EvalScriptError"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.scripteval.EvalScriptError</span></code></a></p>
+<p>A VERIFY opcode failed</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.scripteval.EvalScript">
+<code class="descclassname">bitcoin.core.scripteval.</code><code class="descname">EvalScript</code><span class="sig-paren">(</span><em>stack</em>, <em>scriptIn</em>, <em>txTo</em>, <em>inIdx</em>, <em>flags=()</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/scripteval.html#EvalScript"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.scripteval.EvalScript" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate a script</p>
+<p>stack    - Initial stack</p>
+<p>scriptIn - Script</p>
+<p>txTo     - Transaction the script is a part of</p>
+<p>inIdx    - txin index of the scriptSig</p>
+<p>flags    - SCRIPT_VERIFY_* flags to apply</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.scripteval.VerifyScriptError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.scripteval.</code><code class="descname">VerifyScriptError</code><a class="reference internal" href="_modules/bitcoin/core/scripteval.html#VerifyScriptError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.scripteval.VerifyScriptError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.ValidationError" title="bitcoin.core.ValidationError"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.ValidationError</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.scripteval.VerifyScript">
+<code class="descclassname">bitcoin.core.scripteval.</code><code class="descname">VerifyScript</code><span class="sig-paren">(</span><em>scriptSig</em>, <em>scriptPubKey</em>, <em>txTo</em>, <em>inIdx</em>, <em>flags=()</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/scripteval.html#VerifyScript"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.scripteval.VerifyScript" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify a scriptSig satisfies a scriptPubKey</p>
+<p>scriptSig    - Signature</p>
+<p>scriptPubKey - PubKey</p>
+<p>txTo         - Spending transaction</p>
+<p>inIdx        - Index of the transaction input containing scriptSig</p>
+<p>Raises a ValidationError subclass if the validation fails.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.scripteval.VerifySignatureError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.scripteval.</code><code class="descname">VerifySignatureError</code><a class="reference internal" href="_modules/bitcoin/core/scripteval.html#VerifySignatureError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.scripteval.VerifySignatureError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.ValidationError" title="bitcoin.core.ValidationError"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.ValidationError</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.scripteval.VerifySignature">
+<code class="descclassname">bitcoin.core.scripteval.</code><code class="descname">VerifySignature</code><span class="sig-paren">(</span><em>txFrom</em>, <em>txTo</em>, <em>inIdx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/scripteval.html#VerifySignature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.scripteval.VerifySignature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify a scriptSig signature can spend a txout</p>
+<p>Verifies that the scriptSig in txTo.vin[inIdx] is a valid scriptSig for the
+corresponding COutPoint in transaction txFrom.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-bitcoin.core.serialize">
+<span id="serialize"></span><h2><code class="xref py py-mod docutils literal"><span class="pre">serialize</span></code><a class="headerlink" href="#module-bitcoin.core.serialize" title="Permalink to this headline">¶</a></h2>
+<p>Serialization routines</p>
+<p>You probabably don&#8217;t need to use these directly.</p>
+<dl class="function">
+<dt id="bitcoin.core.serialize.Hash">
+<code class="descclassname">bitcoin.core.serialize.</code><code class="descname">Hash</code><span class="sig-paren">(</span><em>msg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#Hash"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.Hash" title="Permalink to this definition">¶</a></dt>
+<dd><p>SHA256^2)(msg) -&gt; bytes</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.serialize.Hash160">
+<code class="descclassname">bitcoin.core.serialize.</code><code class="descname">Hash160</code><span class="sig-paren">(</span><em>msg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#Hash160"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.Hash160" title="Permalink to this definition">¶</a></dt>
+<dd><p>RIPEME160(SHA256(msg)) -&gt; bytes</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.serialize.SerializationError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.serialize.</code><code class="descname">SerializationError</code><a class="reference internal" href="_modules/bitcoin/core/serialize.html#SerializationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.SerializationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<p>Base class for serialization errors</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.serialize.SerializationTruncationError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.serialize.</code><code class="descname">SerializationTruncationError</code><a class="reference internal" href="_modules/bitcoin/core/serialize.html#SerializationTruncationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.SerializationTruncationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.serialize.SerializationError" title="bitcoin.core.serialize.SerializationError"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.SerializationError</span></code></a></p>
+<p>Serialized data was truncated</p>
+<p>Thrown by deserialize() and stream_deserialize()</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="bitcoin.core.serialize.DeserializationExtraDataError">
+<em class="property">exception </em><code class="descclassname">bitcoin.core.serialize.</code><code class="descname">DeserializationExtraDataError</code><span class="sig-paren">(</span><em>msg</em>, <em>obj</em>, <em>padding</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#DeserializationExtraDataError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.DeserializationExtraDataError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.serialize.SerializationError" title="bitcoin.core.serialize.SerializationError"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.SerializationError</span></code></a></p>
+<p>Deserialized data had extra data at the end</p>
+<p>Thrown by deserialize() when not all data is consumed during
+deserialization. The deserialized object and extra padding not consumed are
+saved.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.serialize.ser_read">
+<code class="descclassname">bitcoin.core.serialize.</code><code class="descname">ser_read</code><span class="sig-paren">(</span><em>f</em>, <em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#ser_read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.ser_read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read from a stream safely</p>
+<p>Raises SerializationError and SerializationTruncationError appropriately.
+Use this instead of f.read() in your classes stream_(de)serialization()
+functions.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.serialize.Serializable">
+<em class="property">class </em><code class="descclassname">bitcoin.core.serialize.</code><code class="descname">Serializable</code><a class="reference internal" href="_modules/bitcoin/core/serialize.html#Serializable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.Serializable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Base class for serializable objects</p>
+<dl class="method">
+<dt id="bitcoin.core.serialize.Serializable.GetHash">
+<code class="descname">GetHash</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#Serializable.GetHash"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.Serializable.GetHash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the hash of the serialized object</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.Serializable.deserialize">
+<em class="property">classmethod </em><code class="descname">deserialize</code><span class="sig-paren">(</span><em>buf</em>, <em>allow_padding=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#Serializable.deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.Serializable.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deserialize bytes, returning an instance</p>
+<p>allow_padding - Allow buf to include extra padding. (default False)</p>
+<p>If allow_padding is False and not all bytes are consumed during
+deserialization DeserializationExtraDataError will be raised.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.serialize.Serializable.serialize">
+<code class="descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#Serializable.serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.Serializable.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serialize, returning bytes</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.Serializable.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#Serializable.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.Serializable.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deserialize from a stream</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitcoin.core.serialize.Serializable.stream_serialize">
+<code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#Serializable.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.Serializable.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serialize to a stream</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.serialize.ImmutableSerializable">
+<em class="property">class </em><code class="descclassname">bitcoin.core.serialize.</code><code class="descname">ImmutableSerializable</code><a class="reference internal" href="_modules/bitcoin/core/serialize.html#ImmutableSerializable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.ImmutableSerializable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.serialize.Serializable" title="bitcoin.core.serialize.Serializable"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.Serializable</span></code></a></p>
+<p>Immutable serializable object</p>
+<dl class="method">
+<dt id="bitcoin.core.serialize.ImmutableSerializable.GetHash">
+<code class="descname">GetHash</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#ImmutableSerializable.GetHash"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.ImmutableSerializable.GetHash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the hash of the serialized object</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.serialize.Serializer">
+<em class="property">class </em><code class="descclassname">bitcoin.core.serialize.</code><code class="descname">Serializer</code><a class="reference internal" href="_modules/bitcoin/core/serialize.html#Serializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.Serializer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Base class for object serializers</p>
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.Serializer.deserialize">
+<em class="property">classmethod </em><code class="descname">deserialize</code><span class="sig-paren">(</span><em>buf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#Serializer.deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.Serializer.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.Serializer.serialize">
+<em class="property">classmethod </em><code class="descname">serialize</code><span class="sig-paren">(</span><em>obj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#Serializer.serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.Serializer.serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.Serializer.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#Serializer.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.Serializer.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.Serializer.stream_serialize">
+<em class="property">classmethod </em><code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>obj</em>, <em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#Serializer.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.Serializer.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.serialize.VarIntSerializer">
+<em class="property">class </em><code class="descclassname">bitcoin.core.serialize.</code><code class="descname">VarIntSerializer</code><a class="reference internal" href="_modules/bitcoin/core/serialize.html#VarIntSerializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.VarIntSerializer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.serialize.Serializer" title="bitcoin.core.serialize.Serializer"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.Serializer</span></code></a></p>
+<p>Serialization of variable length ints</p>
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.VarIntSerializer.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#VarIntSerializer.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.VarIntSerializer.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.VarIntSerializer.stream_serialize">
+<em class="property">classmethod </em><code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>i</em>, <em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#VarIntSerializer.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.VarIntSerializer.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.serialize.BytesSerializer">
+<em class="property">class </em><code class="descclassname">bitcoin.core.serialize.</code><code class="descname">BytesSerializer</code><a class="reference internal" href="_modules/bitcoin/core/serialize.html#BytesSerializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.BytesSerializer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.serialize.Serializer" title="bitcoin.core.serialize.Serializer"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.Serializer</span></code></a></p>
+<p>Serialization of bytes instances</p>
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.BytesSerializer.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#BytesSerializer.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.BytesSerializer.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.BytesSerializer.stream_serialize">
+<em class="property">classmethod </em><code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>b</em>, <em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#BytesSerializer.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.BytesSerializer.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.serialize.VectorSerializer">
+<em class="property">class </em><code class="descclassname">bitcoin.core.serialize.</code><code class="descname">VectorSerializer</code><a class="reference internal" href="_modules/bitcoin/core/serialize.html#VectorSerializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.VectorSerializer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.serialize.Serializer" title="bitcoin.core.serialize.Serializer"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.Serializer</span></code></a></p>
+<p>Base class for serializers of object vectors</p>
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.VectorSerializer.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>inner_cls</em>, <em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#VectorSerializer.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.VectorSerializer.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.VectorSerializer.stream_serialize">
+<em class="property">classmethod </em><code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>inner_cls</em>, <em>objs</em>, <em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#VectorSerializer.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.VectorSerializer.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.serialize.uint256VectorSerializer">
+<em class="property">class </em><code class="descclassname">bitcoin.core.serialize.</code><code class="descname">uint256VectorSerializer</code><a class="reference internal" href="_modules/bitcoin/core/serialize.html#uint256VectorSerializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.uint256VectorSerializer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.serialize.Serializer" title="bitcoin.core.serialize.Serializer"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.Serializer</span></code></a></p>
+<p>Serialize vectors of uint256</p>
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.uint256VectorSerializer.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#uint256VectorSerializer.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.uint256VectorSerializer.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.uint256VectorSerializer.stream_serialize">
+<em class="property">classmethod </em><code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>uints</em>, <em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#uint256VectorSerializer.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.uint256VectorSerializer.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.serialize.intVectorSerialzer">
+<em class="property">class </em><code class="descclassname">bitcoin.core.serialize.</code><code class="descname">intVectorSerialzer</code><a class="reference internal" href="_modules/bitcoin/core/serialize.html#intVectorSerialzer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.intVectorSerialzer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.serialize.Serializer" title="bitcoin.core.serialize.Serializer"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.Serializer</span></code></a></p>
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.intVectorSerialzer.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#intVectorSerialzer.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.intVectorSerialzer.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.intVectorSerialzer.stream_serialize">
+<em class="property">classmethod </em><code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>ints</em>, <em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#intVectorSerialzer.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.intVectorSerialzer.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitcoin.core.serialize.VarStringSerializer">
+<em class="property">class </em><code class="descclassname">bitcoin.core.serialize.</code><code class="descname">VarStringSerializer</code><a class="reference internal" href="_modules/bitcoin/core/serialize.html#VarStringSerializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.VarStringSerializer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitcoin.core.serialize.Serializer" title="bitcoin.core.serialize.Serializer"><code class="xref py py-class docutils literal"><span class="pre">bitcoin.core.serialize.Serializer</span></code></a></p>
+<p>Serialize variable length strings</p>
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.VarStringSerializer.stream_deserialize">
+<em class="property">classmethod </em><code class="descname">stream_deserialize</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#VarStringSerializer.stream_deserialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.VarStringSerializer.stream_deserialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="bitcoin.core.serialize.VarStringSerializer.stream_serialize">
+<em class="property">classmethod </em><code class="descname">stream_serialize</code><span class="sig-paren">(</span><em>s</em>, <em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#VarStringSerializer.stream_serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.VarStringSerializer.stream_serialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.serialize.uint256_from_str">
+<code class="descclassname">bitcoin.core.serialize.</code><code class="descname">uint256_from_str</code><span class="sig-paren">(</span><em>s</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#uint256_from_str"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.uint256_from_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert bytes to uint256</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.serialize.uint256_from_compact">
+<code class="descclassname">bitcoin.core.serialize.</code><code class="descname">uint256_from_compact</code><span class="sig-paren">(</span><em>c</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#uint256_from_compact"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.uint256_from_compact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert compact encoding to uint256</p>
+<p>Used for the nBits compact encoding of the target in the block header.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.serialize.compact_from_uint256">
+<code class="descclassname">bitcoin.core.serialize.</code><code class="descname">compact_from_uint256</code><span class="sig-paren">(</span><em>v</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#compact_from_uint256"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.compact_from_uint256" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert uint256 to compact encoding</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="bitcoin.core.serialize.uint256_to_shortstr">
+<code class="descclassname">bitcoin.core.serialize.</code><code class="descname">uint256_to_shortstr</code><span class="sig-paren">(</span><em>u</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitcoin/core/serialize.html#uint256_to_shortstr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitcoin.core.serialize.uint256_to_shortstr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">bitcoin.core</a><ul>
+<li><a class="reference internal" href="#module-bitcoin.core"><code class="docutils literal"><span class="pre">core</span></code></a></li>
+<li><a class="reference internal" href="#module-bitcoin.core.key"><code class="docutils literal"><span class="pre">key</span></code></a></li>
+<li><a class="reference internal" href="#module-bitcoin.core.script"><code class="docutils literal"><span class="pre">script</span></code></a></li>
+<li><a class="reference internal" href="#module-bitcoin.core.scripteval"><code class="docutils literal"><span class="pre">scripteval</span></code></a></li>
+<li><a class="reference internal" href="#module-bitcoin.core.serialize"><code class="docutils literal"><span class="pre">serialize</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="bitcoin.html"
+                        title="previous chapter">bitcoin</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/bitcoin.core.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="bitcoin.html" title="bitcoin"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2012-2015, The python-bitcoinlib developers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

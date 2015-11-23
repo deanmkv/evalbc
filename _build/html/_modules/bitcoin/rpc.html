@@ -1,0 +1,720 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>bitcoin.rpc &mdash; python-bitcoinlib 0.5.1-SNAPSHOT documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.5.1-SNAPSHOT',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="python-bitcoinlib 0.5.1-SNAPSHOT documentation" href="../../index.html" />
+    <link rel="up" title="bitcoin" href="../bitcoin.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../bitcoin.html" accesskey="U">bitcoin</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bitcoin.rpc</h1><div class="highlight"><pre>
+<span class="c"># Copyright (C) 2007 Jan-Klaas Kollhof</span>
+<span class="c"># Copyright (C) 2011-2015 The python-bitcoinlib developers</span>
+<span class="c">#</span>
+<span class="c"># This file is part of python-bitcoinlib.</span>
+<span class="c">#</span>
+<span class="c"># It is subject to the license terms in the LICENSE file found in the top-level</span>
+<span class="c"># directory of this distribution.</span>
+<span class="c">#</span>
+<span class="c"># No part of python-bitcoinlib, including this file, may be copied, modified,</span>
+<span class="c"># propagated, or distributed except according to the terms contained in the</span>
+<span class="c"># LICENSE file.</span>
+
+<span class="sd">&quot;&quot;&quot;Bitcoin Core RPC support</span>
+
+<span class="sd">By default this uses the standard library ``json`` module. By monkey patching,</span>
+<span class="sd">a different implementation can be used instead, at your own risk:</span>
+
+<span class="sd">&gt;&gt;&gt; import simplejson</span>
+<span class="sd">&gt;&gt;&gt; import bitcoin.rpc</span>
+<span class="sd">&gt;&gt;&gt; bitcoin.rpc.json = simplejson</span>
+
+<span class="sd">(``simplejson`` is the externally maintained version of the same module and</span>
+<span class="sd">thus better optimized but perhaps less stable.)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">unicode_literals</span>
+<span class="kn">import</span> <span class="nn">ssl</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">http.client</span> <span class="kn">as</span> <span class="nn">httplib</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">httplib</span>
+<span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">binascii</span>
+<span class="kn">import</span> <span class="nn">decimal</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">urllib.parse</span> <span class="kn">as</span> <span class="nn">urlparse</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">urlparse</span>
+
+<span class="kn">import</span> <span class="nn">bitcoin</span>
+<span class="kn">from</span> <span class="nn">bitcoin.core</span> <span class="kn">import</span> <span class="n">COIN</span><span class="p">,</span> <span class="n">lx</span><span class="p">,</span> <span class="n">b2lx</span><span class="p">,</span> <span class="n">CBlock</span><span class="p">,</span> <span class="n">CTransaction</span><span class="p">,</span> <span class="n">COutPoint</span><span class="p">,</span> <span class="n">CTxOut</span>
+<span class="kn">from</span> <span class="nn">bitcoin.core.script</span> <span class="kn">import</span> <span class="n">CScript</span>
+<span class="kn">from</span> <span class="nn">bitcoin.wallet</span> <span class="kn">import</span> <span class="n">CBitcoinAddress</span><span class="p">,</span> <span class="n">CBitcoinSecret</span>
+
+<span class="n">DEFAULT_USER_AGENT</span> <span class="o">=</span> <span class="s">&quot;AuthServiceProxy/0.1&quot;</span>
+
+<span class="n">DEFAULT_HTTP_TIMEOUT</span> <span class="o">=</span> <span class="mi">30</span>
+
+<span class="c"># (un)hexlify to/from unicode, needed for Python3</span>
+<span class="n">unhexlify</span> <span class="o">=</span> <span class="n">binascii</span><span class="o">.</span><span class="n">unhexlify</span>
+<span class="n">hexlify</span> <span class="o">=</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span>
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;</span> <span class="s">&#39;3&#39;</span><span class="p">:</span>
+    <span class="n">unhexlify</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">h</span><span class="p">:</span> <span class="n">binascii</span><span class="o">.</span><span class="n">unhexlify</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;utf8&#39;</span><span class="p">))</span>
+    <span class="n">hexlify</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;utf8&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="JSONRPCError"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.JSONRPCError">[docs]</a><span class="k">class</span> <span class="nc">JSONRPCError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;JSON-RPC protocol error&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rpc_error</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">JSONRPCException</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span>
+            <span class="s">&#39;msg: </span><span class="si">%r</span><span class="s">  code: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span>
+            <span class="p">(</span><span class="n">rpc_error</span><span class="p">[</span><span class="s">&#39;message&#39;</span><span class="p">],</span> <span class="n">rpc_error</span><span class="p">[</span><span class="s">&#39;code&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="n">rpc_error</span>
+
+
+<span class="c"># 0.4.0 compatibility</span></div>
+<span class="n">JSONRPCException</span> <span class="o">=</span> <span class="n">JSONRPCError</span>
+
+
+<span class="k">class</span> <span class="nc">BaseProxy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base JSON-RPC proxy class. Contains only private methods; do not use</span>
+<span class="sd">    directly.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">service_url</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">service_port</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">btc_conf_file</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">timeout</span><span class="o">=</span><span class="n">DEFAULT_HTTP_TIMEOUT</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">service_url</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># Figure out the path to the bitcoin.conf file</span>
+            <span class="k">if</span> <span class="n">btc_conf_file</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;Darwin&#39;</span><span class="p">:</span>
+                    <span class="n">btc_conf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s">&#39;~/Library/Application Support/Bitcoin/&#39;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;Windows&#39;</span><span class="p">:</span>
+                    <span class="n">btc_conf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;APPDATA&#39;</span><span class="p">],</span> <span class="s">&#39;Bitcoin&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">btc_conf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s">&#39;~/.bitcoin&#39;</span><span class="p">)</span>
+                <span class="n">btc_conf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">btc_conf_file</span><span class="p">,</span> <span class="s">&#39;bitcoin.conf&#39;</span><span class="p">)</span>
+
+            <span class="c"># Extract contents of bitcoin.conf to build service_url</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">btc_conf_file</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fd</span><span class="p">:</span>
+                <span class="c"># Bitcoin Core accepts empty rpcuser, not specified in btc_conf_file</span>
+                <span class="n">conf</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;rpcuser&#39;</span><span class="p">:</span> <span class="s">&quot;&quot;</span><span class="p">}</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fd</span><span class="o">.</span><span class="n">readlines</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="s">&#39;#&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="n">line</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s">&#39;#&#39;</span><span class="p">)]</span>
+                    <span class="k">if</span> <span class="s">&#39;=&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="n">conf</span><span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="n">service_port</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">service_port</span> <span class="o">=</span> <span class="n">bitcoin</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">RPC_PORT</span>
+                <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcport&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;rpcport&#39;</span><span class="p">,</span> <span class="n">service_port</span><span class="p">))</span>
+                <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcssl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;rpcssl&#39;</span><span class="p">,</span> <span class="s">&#39;0&#39;</span><span class="p">)</span>
+                <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpchost&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;rpcconnect&#39;</span><span class="p">,</span> <span class="s">&#39;localhost&#39;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcssl&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;0&#39;</span><span class="p">,</span> <span class="s">&#39;false&#39;</span><span class="p">):</span>
+                    <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcssl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">elif</span> <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcssl&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;1&#39;</span><span class="p">,</span> <span class="s">&#39;true&#39;</span><span class="p">):</span>
+                    <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcssl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Unknown rpcssl value </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcssl&#39;</span><span class="p">])</span>
+
+                <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcssl&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="s">&#39;rpcsslcertificatechainfile&#39;</span> <span class="ow">in</span> <span class="n">conf</span> <span class="ow">and</span> <span class="s">&#39;rpcsslprivatekeyfile&#39;</span> <span class="ow">in</span> <span class="n">conf</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__ssl_context</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">SSLContext</span><span class="p">(</span><span class="n">ssl</span><span class="o">.</span><span class="n">PROTOCOL_TLSv1_2</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcsslcertificatechainfile&#39;</span><span class="p">]):</span>
+                        <span class="n">certificate</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcsslcertificatechainfile&#39;</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">btc_conf_file</span><span class="p">),</span> <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcsslcertificatechainfile&#39;</span><span class="p">])):</span>
+                        <span class="n">certificate</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">btc_conf_file</span><span class="p">),</span> <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcsslcertificatechainfile&#39;</span><span class="p">])</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;The value of rpcsslcertificatechainfile is not correctly specified in the configuration file: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">btc_conf_file</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcsslprivatekeyfile&#39;</span><span class="p">]):</span>
+                        <span class="n">private_key</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcsslprivatekeyfile&#39;</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">btc_conf_file</span><span class="p">),</span> <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcsslprivatekeyfile&#39;</span><span class="p">])):</span>
+                        <span class="n">private_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">btc_conf_file</span><span class="p">),</span> <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcsslprivatekeyfile&#39;</span><span class="p">])</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;The value of rpcsslprivatekeyfile is not correctly specified in the configuration file: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">btc_conf_file</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__ssl_context</span><span class="o">.</span><span class="n">load_cert_chain</span><span class="p">(</span><span class="n">certificate</span><span class="p">,</span> <span class="n">private_key</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="s">&#39;rpcpassword&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">conf</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;The value of rpcpassword not specified in the configuration file: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">btc_conf_file</span><span class="p">)</span>
+
+                <span class="n">service_url</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">://</span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">@</span><span class="si">%s</span><span class="s">:</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span>
+                    <span class="p">(</span><span class="s">&#39;https&#39;</span> <span class="k">if</span> <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcssl&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="s">&#39;http&#39;</span><span class="p">,</span>
+                     <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcuser&#39;</span><span class="p">],</span> <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcpassword&#39;</span><span class="p">],</span>
+                     <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpchost&#39;</span><span class="p">],</span> <span class="n">conf</span><span class="p">[</span><span class="s">&#39;rpcport&#39;</span><span class="p">]))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__service_url</span> <span class="o">=</span> <span class="n">service_url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__url</span> <span class="o">=</span> <span class="n">urlparse</span><span class="o">.</span><span class="n">urlparse</span><span class="p">(</span><span class="n">service_url</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__url</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;https&#39;</span><span class="p">,</span> <span class="s">&#39;http&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Unsupported URL scheme </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">__url</span><span class="o">.</span><span class="n">scheme</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__url</span><span class="o">.</span><span class="n">port</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__url</span><span class="o">.</span><span class="n">scheme</span> <span class="o">==</span> <span class="s">&#39;https&#39;</span><span class="p">:</span>
+                <span class="n">port</span> <span class="o">=</span> <span class="n">httplib</span><span class="o">.</span><span class="n">HTTPS_PORT</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">port</span> <span class="o">=</span> <span class="n">httplib</span><span class="o">.</span><span class="n">HTTP_PORT</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__url</span><span class="o">.</span><span class="n">port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__id_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">authpair</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__url</span><span class="o">.</span><span class="n">username</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__url</span><span class="o">.</span><span class="n">password</span><span class="p">)</span>
+        <span class="n">authpair</span> <span class="o">=</span> <span class="n">authpair</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;utf8&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__auth_header</span> <span class="o">=</span> <span class="n">b</span><span class="s">&quot;Basic &quot;</span> <span class="o">+</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">authpair</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__url</span><span class="o">.</span><span class="n">scheme</span> <span class="o">==</span> <span class="s">&#39;https&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__conn</span> <span class="o">=</span> <span class="n">httplib</span><span class="o">.</span><span class="n">HTTPSConnection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__url</span><span class="o">.</span><span class="n">hostname</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span>
+                                                  <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__ssl_context</span><span class="p">,</span>
+                                                  <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__conn</span> <span class="o">=</span> <span class="n">httplib</span><span class="o">.</span><span class="n">HTTPConnection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__url</span><span class="o">.</span><span class="n">hostname</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span>
+                                                 <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__id_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">postdata</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s">&#39;version&#39;</span><span class="p">:</span> <span class="s">&#39;1.1&#39;</span><span class="p">,</span>
+                               <span class="s">&#39;method&#39;</span><span class="p">:</span> <span class="n">service_name</span><span class="p">,</span>
+                               <span class="s">&#39;params&#39;</span><span class="p">:</span> <span class="n">args</span><span class="p">,</span>
+                               <span class="s">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__id_count</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__conn</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__url</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">postdata</span><span class="p">,</span>
+                            <span class="p">{</span><span class="s">&#39;Host&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__url</span><span class="o">.</span><span class="n">hostname</span><span class="p">,</span>
+                             <span class="s">&#39;User-Agent&#39;</span><span class="p">:</span> <span class="n">DEFAULT_USER_AGENT</span><span class="p">,</span>
+                             <span class="s">&#39;Authorization&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__auth_header</span><span class="p">,</span>
+                             <span class="s">&#39;Content-type&#39;</span><span class="p">:</span> <span class="s">&#39;application/json&#39;</span><span class="p">})</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_response</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">response</span><span class="p">[</span><span class="s">&#39;error&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">JSONRPCError</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s">&#39;error&#39;</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="s">&#39;result&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">JSONRPCError</span><span class="p">({</span>
+                <span class="s">&#39;code&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">343</span><span class="p">,</span> <span class="s">&#39;message&#39;</span><span class="p">:</span> <span class="s">&#39;missing JSON-RPC result&#39;</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">response</span><span class="p">[</span><span class="s">&#39;result&#39;</span><span class="p">]</span>
+
+
+    <span class="k">def</span> <span class="nf">_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rpc_call_list</span><span class="p">):</span>
+        <span class="n">postdata</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">rpc_call_list</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__conn</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__url</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">postdata</span><span class="p">,</span>
+                            <span class="p">{</span><span class="s">&#39;Host&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__url</span><span class="o">.</span><span class="n">hostname</span><span class="p">,</span>
+                             <span class="s">&#39;User-Agent&#39;</span><span class="p">:</span> <span class="n">DEFAULT_USER_AGENT</span><span class="p">,</span>
+                             <span class="s">&#39;Authorization&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__auth_header</span><span class="p">,</span>
+                             <span class="s">&#39;Content-type&#39;</span><span class="p">:</span> <span class="s">&#39;application/json&#39;</span><span class="p">})</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_response</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_response</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">http_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__conn</span><span class="o">.</span><span class="n">getresponse</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">http_response</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">JSONRPCError</span><span class="p">({</span>
+                <span class="s">&#39;code&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">342</span><span class="p">,</span> <span class="s">&#39;message&#39;</span><span class="p">:</span> <span class="s">&#39;missing HTTP response from server&#39;</span><span class="p">})</span>
+
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">http_response</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;utf8&#39;</span><span class="p">),</span>
+                          <span class="n">parse_float</span><span class="o">=</span><span class="n">decimal</span><span class="o">.</span><span class="n">Decimal</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="RawProxy"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.RawProxy">[docs]</a><span class="k">class</span> <span class="nc">RawProxy</span><span class="p">(</span><span class="n">BaseProxy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Low-level proxy to a bitcoin JSON-RPC service</span>
+
+<span class="sd">    Unlike ``Proxy``, no conversion is done besides parsing JSON. As far as</span>
+<span class="sd">    Python is concerned, you can call any method; ``JSONRPCError`` will be</span>
+<span class="sd">    raised if the server does not recognize it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">service_url</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">service_port</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">btc_conf_file</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">timeout</span><span class="o">=</span><span class="n">DEFAULT_HTTP_TIMEOUT</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RawProxy</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">service_url</span><span class="o">=</span><span class="n">service_url</span><span class="p">,</span>
+                                       <span class="n">service_port</span><span class="o">=</span><span class="n">service_port</span><span class="p">,</span>
+                                       <span class="n">btc_conf_file</span><span class="o">=</span><span class="n">btc_conf_file</span><span class="p">,</span>
+                                       <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
+                                       <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;__&#39;</span><span class="p">):</span>
+            <span class="c"># Python internal stuff</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span>
+
+        <span class="c"># Create a callable to do the actual call</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="c"># Make debuggers show &lt;function bitcoin.rpc.name&gt; rather than &lt;function</span>
+        <span class="c"># bitcoin.rpc.&lt;lambda&gt;&gt;</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">__name__</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">return</span> <span class="n">f</span>
+
+</div>
+<div class="viewcode-block" id="Proxy"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy">[docs]</a><span class="k">class</span> <span class="nc">Proxy</span><span class="p">(</span><span class="n">BaseProxy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Proxy to a bitcoin RPC service</span>
+
+<span class="sd">    Unlike ``RawProxy``, data is passed as ``bitcoin.core`` objects or packed</span>
+<span class="sd">    bytes, rather than JSON or hex strings. Not all methods are implemented</span>
+<span class="sd">    yet; you can use ``call`` to access missing ones in a forward-compatible</span>
+<span class="sd">    way. Assumes Bitcoin Core version &gt;= 0.9; older versions mostly work, but</span>
+<span class="sd">    there are a few incompatibilities.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">service_url</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">service_port</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">btc_conf_file</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">timeout</span><span class="o">=</span><span class="n">DEFAULT_HTTP_TIMEOUT</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a proxy object</span>
+
+<span class="sd">        If ``service_url`` is not specified, the username and password are read</span>
+<span class="sd">        out of the file ``btc_conf_file``. If ``btc_conf_file`` is not</span>
+<span class="sd">        specified, ``~/.bitcoin/bitcoin.conf`` or equivalent is used by</span>
+<span class="sd">        default.  The default port is set according to the chain parameters in</span>
+<span class="sd">        use: mainnet, testnet, or regtest.</span>
+
+<span class="sd">        Usually no arguments to ``Proxy()`` are needed; the local bitcoind will</span>
+<span class="sd">        be used.</span>
+
+<span class="sd">        ``timeout`` - timeout in seconds before the HTTP interface times out</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Proxy</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">service_url</span><span class="o">=</span><span class="n">service_url</span><span class="p">,</span>
+                                    <span class="n">service_port</span><span class="o">=</span><span class="n">service_port</span><span class="p">,</span>
+                                    <span class="n">btc_conf_file</span><span class="o">=</span><span class="n">btc_conf_file</span><span class="p">,</span>
+                                    <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
+                                    <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Proxy.call"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Call an RPC method by name and raw (JSON encodable) arguments&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.dumpprivkey"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.dumpprivkey">[docs]</a>    <span class="k">def</span> <span class="nf">dumpprivkey</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the private key matching an address</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;dumpprivkey&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">addr</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">CBitcoinSecret</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.fundrawtransaction"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.fundrawtransaction">[docs]</a>    <span class="k">def</span> <span class="nf">fundrawtransaction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tx</span><span class="p">,</span> <span class="n">include_watching</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add inputs to a transaction until it has enough in value to meet its out value.</span>
+
+<span class="sd">        include_watching - Also select inputs which are watch only</span>
+
+<span class="sd">        Returns dict:</span>
+
+<span class="sd">        {&#39;tx&#39;:        Resulting tx,</span>
+<span class="sd">         &#39;fee&#39;:       Fee the resulting transaction pays,</span>
+<span class="sd">         &#39;changepos&#39;: Position of added change output, or -1,</span>
+<span class="sd">        }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hextx</span> <span class="o">=</span> <span class="n">hexlify</span><span class="p">(</span><span class="n">tx</span><span class="o">.</span><span class="n">serialize</span><span class="p">())</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;fundrawtransaction&#39;</span><span class="p">,</span> <span class="n">hextx</span><span class="p">,</span> <span class="n">include_watching</span><span class="p">)</span>
+
+        <span class="n">r</span><span class="p">[</span><span class="s">&#39;tx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CTransaction</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">unhexlify</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s">&#39;hex&#39;</span><span class="p">]))</span>
+        <span class="k">del</span> <span class="n">r</span><span class="p">[</span><span class="s">&#39;hex&#39;</span><span class="p">]</span>
+
+        <span class="n">r</span><span class="p">[</span><span class="s">&#39;fee&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s">&#39;fee&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">COIN</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">r</span>
+</div>
+<div class="viewcode-block" id="Proxy.generate"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.generate">[docs]</a>    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">numblocks</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Mine blocks immediately (before the RPC call returns)</span>
+
+<span class="sd">        numblocks - How many blocks are generated immediately.</span>
+
+<span class="sd">        Returns iterable of block hashes generated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;generate&#39;</span><span class="p">,</span> <span class="n">numblocks</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">lx</span><span class="p">(</span><span class="n">blk_hash</span><span class="p">)</span> <span class="k">for</span> <span class="n">blk_hash</span> <span class="ow">in</span> <span class="n">r</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.getaccountaddress"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.getaccountaddress">[docs]</a>    <span class="k">def</span> <span class="nf">getaccountaddress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the current Bitcoin address for receiving payments to this</span>
+<span class="sd">        account.&quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;getaccountaddress&#39;</span><span class="p">,</span> <span class="n">account</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">CBitcoinAddress</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.getbalance"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.getbalance">[docs]</a>    <span class="k">def</span> <span class="nf">getbalance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="o">=</span><span class="s">&#39;*&#39;</span><span class="p">,</span> <span class="n">minconf</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the balance</span>
+
+<span class="sd">        account - The selected account. Defaults to &quot;*&quot; for entire wallet. It</span>
+<span class="sd">        may be the default account using &quot;&quot;.</span>
+
+<span class="sd">        minconf - Only include transactions confirmed at least this many times.</span>
+<span class="sd">        (default=1)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;getbalance&#39;</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">minconf</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="o">*</span><span class="n">COIN</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.getbestblockhash"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.getbestblockhash">[docs]</a>    <span class="k">def</span> <span class="nf">getbestblockhash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return hash of best (tip) block in longest block chain.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">lx</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;getbestblockhash&#39;</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Proxy.getblock"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.getblock">[docs]</a>    <span class="k">def</span> <span class="nf">getblock</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_hash</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get block &lt;block_hash&gt;</span>
+
+<span class="sd">        Raises IndexError if block_hash is not valid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">block_hash</span> <span class="o">=</span> <span class="n">b2lx</span><span class="p">(</span><span class="n">block_hash</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.getblock(): block_hash must be bytes; got </span><span class="si">%r</span><span class="s"> instance&#39;</span> <span class="o">%</span>
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">block_hash</span><span class="o">.</span><span class="n">__class__</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;getblock&#39;</span><span class="p">,</span> <span class="n">block_hash</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">JSONRPCError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.getblock(): </span><span class="si">%s</span><span class="s"> (</span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span>
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">ex</span><span class="o">.</span><span class="n">error</span><span class="p">[</span><span class="s">&#39;message&#39;</span><span class="p">],</span> <span class="n">ex</span><span class="o">.</span><span class="n">error</span><span class="p">[</span><span class="s">&#39;code&#39;</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">CBlock</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">unhexlify</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Proxy.getblockcount"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.getblockcount">[docs]</a>    <span class="k">def</span> <span class="nf">getblockcount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the number of blocks in the longest block chain&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;getblockcount&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.getblockhash"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.getblockhash">[docs]</a>    <span class="k">def</span> <span class="nf">getblockhash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return hash of block in best-block-chain at height.</span>
+
+<span class="sd">        Raises IndexError if height is not valid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">lx</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;getblockhash&#39;</span><span class="p">,</span> <span class="n">height</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">JSONRPCError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.getblockhash(): </span><span class="si">%s</span><span class="s"> (</span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span>
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">ex</span><span class="o">.</span><span class="n">error</span><span class="p">[</span><span class="s">&#39;message&#39;</span><span class="p">],</span> <span class="n">ex</span><span class="o">.</span><span class="n">error</span><span class="p">[</span><span class="s">&#39;code&#39;</span><span class="p">]))</span>
+</div>
+<div class="viewcode-block" id="Proxy.getinfo"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.getinfo">[docs]</a>    <span class="k">def</span> <span class="nf">getinfo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a JSON object containing various state info&quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;getinfo&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;balance&#39;</span> <span class="ow">in</span> <span class="n">r</span><span class="p">:</span>
+            <span class="n">r</span><span class="p">[</span><span class="s">&#39;balance&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s">&#39;balance&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">COIN</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;paytxfee&#39;</span> <span class="ow">in</span> <span class="n">r</span><span class="p">:</span>
+            <span class="n">r</span><span class="p">[</span><span class="s">&#39;paytxfee&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s">&#39;paytxfee&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">COIN</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">r</span>
+</div>
+<div class="viewcode-block" id="Proxy.getmininginfo"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.getmininginfo">[docs]</a>    <span class="k">def</span> <span class="nf">getmininginfo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a JSON object containing mining-related information&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;getmininginfo&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.getnewaddress"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.getnewaddress">[docs]</a>    <span class="k">def</span> <span class="nf">getnewaddress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a new Bitcoin address for receiving payments.</span>
+
+<span class="sd">        If account is not None, it is added to the address book so payments</span>
+<span class="sd">        received with the address will be credited to account.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="n">account</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;getnewaddress&#39;</span><span class="p">,</span> <span class="n">account</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;getnewaddress&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">CBitcoinAddress</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.getrawchangeaddress"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.getrawchangeaddress">[docs]</a>    <span class="k">def</span> <span class="nf">getrawchangeaddress</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a new Bitcoin address, for receiving change.</span>
+
+<span class="sd">        This is for use with raw transactions, NOT normal use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;getrawchangeaddress&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">CBitcoinAddress</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.getrawmempool"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.getrawmempool">[docs]</a>    <span class="k">def</span> <span class="nf">getrawmempool</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the mempool&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;getrawmempool&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;getrawmempool&#39;</span><span class="p">)</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="p">[</span><span class="n">lx</span><span class="p">(</span><span class="n">txid</span><span class="p">)</span> <span class="k">for</span> <span class="n">txid</span> <span class="ow">in</span> <span class="n">r</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">r</span>
+</div>
+<div class="viewcode-block" id="Proxy.getrawtransaction"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.getrawtransaction">[docs]</a>    <span class="k">def</span> <span class="nf">getrawtransaction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">txid</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return transaction with hash txid</span>
+
+<span class="sd">        Raises IndexError if transaction not found.</span>
+
+<span class="sd">        verbose - If true a dict is returned instead with additional</span>
+<span class="sd">        information on the transaction.</span>
+
+<span class="sd">        Note that if all txouts are spent and the transaction index is not</span>
+<span class="sd">        enabled the transaction may not be available.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;getrawtransaction&#39;</span><span class="p">,</span> <span class="n">b2lx</span><span class="p">(</span><span class="n">txid</span><span class="p">),</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">JSONRPCError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.getrawtransaction(): </span><span class="si">%s</span><span class="s"> (</span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span>
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">ex</span><span class="o">.</span><span class="n">error</span><span class="p">[</span><span class="s">&#39;message&#39;</span><span class="p">],</span> <span class="n">ex</span><span class="o">.</span><span class="n">error</span><span class="p">[</span><span class="s">&#39;code&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="n">r</span><span class="p">[</span><span class="s">&#39;tx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CTransaction</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">unhexlify</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s">&#39;hex&#39;</span><span class="p">]))</span>
+            <span class="k">del</span> <span class="n">r</span><span class="p">[</span><span class="s">&#39;hex&#39;</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">r</span><span class="p">[</span><span class="s">&#39;txid&#39;</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">r</span><span class="p">[</span><span class="s">&#39;version&#39;</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">r</span><span class="p">[</span><span class="s">&#39;locktime&#39;</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">r</span><span class="p">[</span><span class="s">&#39;vin&#39;</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">r</span><span class="p">[</span><span class="s">&#39;vout&#39;</span><span class="p">]</span>
+            <span class="n">r</span><span class="p">[</span><span class="s">&#39;blockhash&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lx</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s">&#39;blockhash&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="s">&#39;blockhash&#39;</span> <span class="ow">in</span> <span class="n">r</span> <span class="k">else</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">CTransaction</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">unhexlify</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">r</span>
+</div>
+<div class="viewcode-block" id="Proxy.getreceivedbyaddress"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.getreceivedbyaddress">[docs]</a>    <span class="k">def</span> <span class="nf">getreceivedbyaddress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">,</span> <span class="n">minconf</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return total amount received by given a (wallet) address</span>
+
+<span class="sd">        Get the amount received by &lt;address&gt; in transactions with at least</span>
+<span class="sd">        [minconf] confirmations.</span>
+
+<span class="sd">        Works only for addresses in the local wallet; other addresses will</span>
+<span class="sd">        always show zero.</span>
+
+<span class="sd">        addr    - The address. (CBitcoinAddress instance)</span>
+
+<span class="sd">        minconf - Only include transactions confirmed at least this many times.</span>
+<span class="sd">        (default=1)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;getreceivedbyaddress&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">addr</span><span class="p">),</span> <span class="n">minconf</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="n">COIN</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.gettransaction"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.gettransaction">[docs]</a>    <span class="k">def</span> <span class="nf">gettransaction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">txid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get detailed information about in-wallet transaction txid</span>
+
+<span class="sd">        Raises IndexError if transaction not found in the wallet.</span>
+
+<span class="sd">        FIXME: Returned data types are not yet converted.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;gettransaction&#39;</span><span class="p">,</span> <span class="n">b2lx</span><span class="p">(</span><span class="n">txid</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">JSONRPCError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.getrawtransaction(): </span><span class="si">%s</span><span class="s"> (</span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span>
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">ex</span><span class="o">.</span><span class="n">error</span><span class="p">[</span><span class="s">&#39;message&#39;</span><span class="p">],</span> <span class="n">ex</span><span class="o">.</span><span class="n">error</span><span class="p">[</span><span class="s">&#39;code&#39;</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">r</span>
+</div>
+<div class="viewcode-block" id="Proxy.gettxout"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.gettxout">[docs]</a>    <span class="k">def</span> <span class="nf">gettxout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outpoint</span><span class="p">,</span> <span class="n">includemempool</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return details about an unspent transaction output.</span>
+
+<span class="sd">        Raises IndexError if outpoint is not found or was spent.</span>
+
+<span class="sd">        includemempool - Include mempool txouts</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;gettxout&#39;</span><span class="p">,</span> <span class="n">b2lx</span><span class="p">(</span><span class="n">outpoint</span><span class="o">.</span><span class="n">hash</span><span class="p">),</span> <span class="n">outpoint</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">includemempool</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">r</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">.gettxout(): unspent txout </span><span class="si">%r</span><span class="s"> not found&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">outpoint</span><span class="p">))</span>
+
+        <span class="n">r</span><span class="p">[</span><span class="s">&#39;txout&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CTxOut</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">COIN</span><span class="p">),</span>
+                            <span class="n">CScript</span><span class="p">(</span><span class="n">unhexlify</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s">&#39;scriptPubKey&#39;</span><span class="p">][</span><span class="s">&#39;hex&#39;</span><span class="p">])))</span>
+        <span class="k">del</span> <span class="n">r</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">r</span><span class="p">[</span><span class="s">&#39;scriptPubKey&#39;</span><span class="p">]</span>
+        <span class="n">r</span><span class="p">[</span><span class="s">&#39;bestblock&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lx</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s">&#39;bestblock&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">r</span>
+</div>
+<div class="viewcode-block" id="Proxy.importaddress"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.importaddress">[docs]</a>    <span class="k">def</span> <span class="nf">importaddress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">rescan</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds an address or pubkey to wallet without the associated privkey.&quot;&quot;&quot;</span>
+        <span class="n">addr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;importaddress&#39;</span><span class="p">,</span> <span class="n">addr</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">rescan</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">r</span>
+</div>
+<div class="viewcode-block" id="Proxy.listunspent"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.listunspent">[docs]</a>    <span class="k">def</span> <span class="nf">listunspent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minconf</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxconf</span><span class="o">=</span><span class="mi">9999999</span><span class="p">,</span> <span class="n">addrs</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return unspent transaction outputs in wallet</span>
+
+<span class="sd">        Outputs will have between minconf and maxconf (inclusive)</span>
+<span class="sd">        confirmations, optionally filtered to only include txouts paid to</span>
+<span class="sd">        addresses in addrs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="n">addrs</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;listunspent&#39;</span><span class="p">,</span> <span class="n">minconf</span><span class="p">,</span> <span class="n">maxconf</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">addrs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span> <span class="k">for</span> <span class="n">addr</span> <span class="ow">in</span> <span class="n">addrs</span><span class="p">]</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;listunspent&#39;</span><span class="p">,</span> <span class="n">minconf</span><span class="p">,</span> <span class="n">maxconf</span><span class="p">,</span> <span class="n">addrs</span><span class="p">)</span>
+
+        <span class="n">r2</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">unspent</span> <span class="ow">in</span> <span class="n">r</span><span class="p">:</span>
+            <span class="n">unspent</span><span class="p">[</span><span class="s">&#39;outpoint&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">COutPoint</span><span class="p">(</span><span class="n">lx</span><span class="p">(</span><span class="n">unspent</span><span class="p">[</span><span class="s">&#39;txid&#39;</span><span class="p">]),</span> <span class="n">unspent</span><span class="p">[</span><span class="s">&#39;vout&#39;</span><span class="p">])</span>
+            <span class="k">del</span> <span class="n">unspent</span><span class="p">[</span><span class="s">&#39;txid&#39;</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">unspent</span><span class="p">[</span><span class="s">&#39;vout&#39;</span><span class="p">]</span>
+
+            <span class="n">unspent</span><span class="p">[</span><span class="s">&#39;address&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CBitcoinAddress</span><span class="p">(</span><span class="n">unspent</span><span class="p">[</span><span class="s">&#39;address&#39;</span><span class="p">])</span>
+            <span class="n">unspent</span><span class="p">[</span><span class="s">&#39;scriptPubKey&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CScript</span><span class="p">(</span><span class="n">unhexlify</span><span class="p">(</span><span class="n">unspent</span><span class="p">[</span><span class="s">&#39;scriptPubKey&#39;</span><span class="p">]))</span>
+            <span class="n">unspent</span><span class="p">[</span><span class="s">&#39;amount&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">unspent</span><span class="p">[</span><span class="s">&#39;amount&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">COIN</span><span class="p">)</span>
+            <span class="n">r2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">unspent</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">r2</span>
+</div>
+<div class="viewcode-block" id="Proxy.lockunspent"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.lockunspent">[docs]</a>    <span class="k">def</span> <span class="nf">lockunspent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unlock</span><span class="p">,</span> <span class="n">outpoints</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Lock or unlock outpoints&quot;&quot;&quot;</span>
+        <span class="n">json_outpoints</span> <span class="o">=</span> <span class="p">[{</span><span class="s">&#39;txid&#39;</span><span class="p">:</span><span class="n">b2lx</span><span class="p">(</span><span class="n">outpoint</span><span class="o">.</span><span class="n">hash</span><span class="p">),</span> <span class="s">&#39;vout&#39;</span><span class="p">:</span><span class="n">outpoint</span><span class="o">.</span><span class="n">n</span><span class="p">}</span>
+                          <span class="k">for</span> <span class="n">outpoint</span> <span class="ow">in</span> <span class="n">outpoints</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;lockunspent&#39;</span><span class="p">,</span> <span class="n">unlock</span><span class="p">,</span> <span class="n">json_outpoints</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.sendrawtransaction"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.sendrawtransaction">[docs]</a>    <span class="k">def</span> <span class="nf">sendrawtransaction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tx</span><span class="p">,</span> <span class="n">allowhighfees</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Submit transaction to local node and network.</span>
+
+<span class="sd">        allowhighfees - Allow even if fees are unreasonably high.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hextx</span> <span class="o">=</span> <span class="n">hexlify</span><span class="p">(</span><span class="n">tx</span><span class="o">.</span><span class="n">serialize</span><span class="p">())</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="n">allowhighfees</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;sendrawtransaction&#39;</span><span class="p">,</span> <span class="n">hextx</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;sendrawtransaction&#39;</span><span class="p">,</span> <span class="n">hextx</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">lx</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.sendmany"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.sendmany">[docs]</a>    <span class="k">def</span> <span class="nf">sendmany</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fromaccount</span><span class="p">,</span> <span class="n">payments</span><span class="p">,</span> <span class="n">minconf</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sent amount to a given address&quot;&quot;&quot;</span>
+        <span class="n">json_payments</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">addr</span><span class="p">):</span><span class="nb">float</span><span class="p">(</span><span class="n">amount</span><span class="p">)</span><span class="o">/</span><span class="n">COIN</span>
+                         <span class="k">for</span> <span class="n">addr</span><span class="p">,</span> <span class="n">amount</span> <span class="ow">in</span> <span class="n">payments</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;sendmany&#39;</span><span class="p">,</span> <span class="n">fromaccount</span><span class="p">,</span> <span class="n">json_payments</span><span class="p">,</span> <span class="n">minconf</span><span class="p">,</span> <span class="n">comment</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">lx</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.sendtoaddress"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.sendtoaddress">[docs]</a>    <span class="k">def</span> <span class="nf">sendtoaddress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sent amount to a given address&quot;&quot;&quot;</span>
+        <span class="n">addr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
+        <span class="n">amount</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">amount</span><span class="p">)</span><span class="o">/</span><span class="n">COIN</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;sendtoaddress&#39;</span><span class="p">,</span> <span class="n">addr</span><span class="p">,</span> <span class="n">amount</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">lx</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.signrawtransaction"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.signrawtransaction">[docs]</a>    <span class="k">def</span> <span class="nf">signrawtransaction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tx</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sign inputs for transaction</span>
+
+<span class="sd">        FIXME: implement options</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hextx</span> <span class="o">=</span> <span class="n">hexlify</span><span class="p">(</span><span class="n">tx</span><span class="o">.</span><span class="n">serialize</span><span class="p">())</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;signrawtransaction&#39;</span><span class="p">,</span> <span class="n">hextx</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="n">r</span><span class="p">[</span><span class="s">&#39;tx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CTransaction</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">unhexlify</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s">&#39;hex&#39;</span><span class="p">]))</span>
+        <span class="k">del</span> <span class="n">r</span><span class="p">[</span><span class="s">&#39;hex&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">r</span>
+</div>
+<div class="viewcode-block" id="Proxy.submitblock"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.submitblock">[docs]</a>    <span class="k">def</span> <span class="nf">submitblock</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Submit a new block to the network.</span>
+
+<span class="sd">        params is optional and is currently ignored by bitcoind. See</span>
+<span class="sd">        https://en.bitcoin.it/wiki/BIP_0022 for full specification.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hexblock</span> <span class="o">=</span> <span class="n">hexlify</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">serialize</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;submitblock&#39;</span><span class="p">,</span> <span class="n">hexblock</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;submitblock&#39;</span><span class="p">,</span> <span class="n">hexblock</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.validateaddress"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.validateaddress">[docs]</a>    <span class="k">def</span> <span class="nf">validateaddress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return information about an address&quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;validateaddress&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">address</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s">&#39;isvalid&#39;</span><span class="p">]:</span>
+            <span class="n">r</span><span class="p">[</span><span class="s">&#39;address&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CBitcoinAddress</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s">&#39;address&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s">&#39;pubkey&#39;</span> <span class="ow">in</span> <span class="n">r</span><span class="p">:</span>
+            <span class="n">r</span><span class="p">[</span><span class="s">&#39;pubkey&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">unhexlify</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s">&#39;pubkey&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">r</span>
+</div>
+    <span class="k">def</span> <span class="nf">_addnode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s">&#39;addnode&#39;</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">r</span>
+
+<div class="viewcode-block" id="Proxy.addnode"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.addnode">[docs]</a>    <span class="k">def</span> <span class="nf">addnode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_addnode</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="s">&#39;add&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.addnodeonetry"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.addnodeonetry">[docs]</a>    <span class="k">def</span> <span class="nf">addnodeonetry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_addnode</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="s">&#39;onetry&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Proxy.removenode"><a class="viewcode-back" href="../../bitcoin.html#bitcoin.rpc.Proxy.removenode">[docs]</a>    <span class="k">def</span> <span class="nf">removenode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_addnode</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="s">&#39;remove&#39;</span><span class="p">)</span>
+</div></div>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s">&#39;JSONRPCError&#39;</span><span class="p">,</span>
+    <span class="s">&#39;JSONRPCException&#39;</span><span class="p">,</span>
+    <span class="s">&#39;RawProxy&#39;</span><span class="p">,</span>
+    <span class="s">&#39;Proxy&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">python-bitcoinlib 0.5.1-SNAPSHOT documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="../bitcoin.html" >bitcoin</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2012-2015, The python-bitcoinlib developers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>
