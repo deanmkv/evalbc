@@ -42,5 +42,5 @@ Article on Confidence Factor: https://medium.com/blockcypher-blog/from-zero-to-h
 * Create node to target/bombard Blockcypher servers
 * 
 
-# Scrach
+# Scratch
 *  Consider conglomerating version info on the network sweep and seeing if any version string indicate BlockCypher code
