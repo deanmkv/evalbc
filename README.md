@@ -47,3 +47,6 @@ Have a Snack, Pay with Bitcoin  http://www.tik.ee.ethz.ch/file/848064fa2e80f88a5
 # Scratch
 *  Consider conglomerating version info on the network sweep and seeing if any version string indicate BlockCypher code
 *  http://dev.blockcypher.com/#txconfidence  use their raw count against them: send 2 transactions to two halves of the network to work towards a partition
+
+# Unknowns
+*  Getting blocked by miners for relaying bad transactions  
