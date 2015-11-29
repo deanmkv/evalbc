@@ -13,6 +13,18 @@ class Linked_List(object):
 		self.end.set_next(link)
 		self.end = link
 
+	def add_linked_list(self, linked):
+		"""Destructive on other linked list (by design)"""
+		if self.start is None:
+			self.start = linked.start
+			self.end = linked.end
+			self.length = linked.length
+			return
+		self.end.set_next(linked.start)
+		self.end = linked.end
+		self.length += linked.length
+		linked.clear()
+
 	def pop(self):
 		if self.start is None:
 			raise IndexError
@@ -23,6 +35,11 @@ class Linked_List(object):
 
 	def has_next(self):
 		return self.start is not None
+
+	def clear(self):  # relying on the garbage collector
+		self.start = None
+		self.end = None
+		self.length = 0
 
 	def __str__(self):
 		ret = ''
@@ -62,6 +79,28 @@ class Link(object):
 
 # tests
 if __name__ == "__main__":
+	def test_combine():
+		# for combining linked lists
+		ll = Linked_List()
+		alink = Link("192.168.1.1", 8333)
+		ll.add(alink)
+		alink = Link("192.168.1.2", 8333)
+		ll.add(alink)
+
+		l2 = Linked_List()
+		alink = Link("192.168.1.100", 8333)
+		l2.add(alink)
+		alink = Link("192.168.1.101", 8333)
+		l2.add(alink)
+
+		ll.add_linked_list(l2)
+		print('~',ll)
+		print('~',l2)
+
+	test_combine()
+	import sys
+	sys.exit(0)
+
 	ll = Linked_List()
 
 	try: 
