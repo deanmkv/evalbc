@@ -3,12 +3,8 @@ from bitcoin.messages import msg_version, msg_verack, msg_addr, MsgSerializable,
 from bitcoin.net import CAddress
 from linked_list import Linked_List, Link
 
-MY_PORT = 8333
 
-bitcoin.SelectParams('mainnet') 
-linked = Linked_List()
-known_set = set()  # docs imply this is a hashset
-known_bad = set()
+# TODO this new implementation needs testing, and maybe debug statements to verify code works
 
 class Wrapper(object):
 	def __init__(self, a_socket):
@@ -17,63 +13,118 @@ class Wrapper(object):
 	def read(self, n):
 		return self.socks.recv(n, socket.MSG_WAITALL)
 
-def version_pkt(client_ip, link_obj):
-    msg = msg_version()
-    msg.nVersion = 70002
-    msg.addrTo.ip = link_obj.ip
-    msg.addrTo.port = link_obj.port
-    msg.addrFrom.ip = client_ip
-    msg.addrFrom.port = MY_PORT
 
-    return msg
+class BitcoinSocket(object):  # TODO could add better debug statements
+	client_ip = "1.1.1.1"  # TODO This value doesn't seem to matter, but we should make sure or use your IP address
+							# or best case write code to find your public facing IP address
+	_port_num = 8000
 
-def addr_pkt( str_addrs ):
-    msg = msg_addr()
-    addrs = []
-    for i in str_addrs:
-        addr = CAddress()
-        addr.port = 8333
-        addr.nTime = int(time.time())
-        addr.ip = i
+	def get_port():  # NOTE: this is not an instance method
+		"""In the future this will allow a good way to support parallelization"""
+		BitcoinSocket._port_num += 1
+		return BitcoinSocket._port_num
 
-        addrs.append( addr )
-    msg.addrs = addrs
-    return msg
+	def __init__(self, link, timeout=10):
+		"""Creates a socket and binds it to a free, unique port"""
+		self.link = link
+		self.results = Linked_List()
+		self.my_socket = socket.socket()
+		# bind socket to free port
+		while True:
+			self.port = BitcoinSocket.get_port()  # autoimcrement
+			try:
+				self.my_socket.bind(('',self.port)) 
+				break;
+			except OSError:  # if port is not free
+				pass
+		self.my_socket.settimeout(timeout)
 
-def processMessage():
-	msg = MsgSerializable.stream_deserialize(Wrapper(s))
-	if msg.command == b"version":
-	    # Send Verack
-	    print('version: ', msg.strSubVer, msg.nVersion)
-	    s.send( msg_verack().to_bytes() )
-	elif msg.command == b"verack":
-	    print("verack: ", msg)
-	elif msg.command == b"inv":
-		print("inv: ", msg.inv)
-	elif msg.command == b"ping":
-		print("ping: ", msg)
-		s.send(msg_pong(msg.nonce).to_bytes())
-	elif msg.command == b"getheaders":
-		print("getheaders received ")
-	elif msg.command == b"addr":							# <-- Here
-		print("addr: size ", len(msg.addrs))
-		for address in msg.addrs:
-			node = Link(address.ip, address.port)
-			linked.add(node)
-		return True
-	else:
-	    print("something else: ", msg.command, msg)
-
-	return False
-
-def bind_to_port(s):
-	global MY_PORT
-	while True:
+	def connect(self):
+		"""Connect to the destination, returning True on success"""
 		try:
-			s.bind(('',MY_PORT))  # autoimcrement
-			break;
-		except OSError:
-			MY_PORT += 1
+			self.my_socket.connect( (self.link.ip,self.link.port) )  # TODO test: add support for IP addresses that are offline
+		except socket.timeout:
+			return False
+		return True
+
+	def listen_until_addresses(self):
+		"""Implements the Bitcoin protocol, sending info until it gets an addr message"""
+		# Send Version packet
+		self.my_socket.send( self._make_version_pkt().to_bytes() )
+
+		# Try to get addresses
+		self.my_socket.send(msg_getaddr().to_bytes())
+
+		while not self._process_message():  # TODO set timeout or something for multiple addr messages
+			pass
+		self.my_socket.close()
+
+	def get_results(self):
+		"""Returns a linked list of all new potential nodes (needs pruning)."""
+		return self.results
+
+	def _make_version_pkt(self):
+	    msg = msg_version()
+	    msg.nVersion = 70002
+	    msg.addrTo.ip = self.link.ip
+	    msg.addrTo.port = self.link.port
+	    msg.addrFrom.ip = BitcoinSocket.client_ip
+	    msg.addrFrom.port = self.port
+	    return msg
+
+	# ...we don't need to tell people who we know about :)
+	# def _make_addr_pkt(self, str_addrs ):
+	#     msg = msg_addr()
+	#     addrs = []
+	#     for i in str_addrs:
+	#         addr = CAddress()
+	#         addr.port = 8333
+	#         addr.nTime = int(time.time())
+	#         addr.ip = i
+
+	#         addrs.append( addr )
+	#     msg.addrs = addrs
+	#     return msg
+
+	def _process_message(self):
+		msg = MsgSerializable.stream_deserialize(Wrapper(s))
+
+		if msg.command == b"version":  # TODO conglomerate these message strings into a dictionary
+		    # Send Verack
+		    print('version: ', msg.strSubVer, msg.nVersion)
+		    s.send( msg_verack().to_bytes() )
+
+		elif msg.command == b"verack":
+		    print("verack: ", msg)
+
+		elif msg.command == b"inv":
+			print("inv: ", msg.inv)
+
+		elif msg.command == b"ping":
+			print("ping: ", msg)
+			s.send(msg_pong(msg.nonce).to_bytes())
+
+		elif msg.command == b"getheaders":
+			print("getheaders received ")
+
+		elif msg.command == b"addr":  # TODO this needs multi-message support
+			print("addr: size ", len(msg.addrs))
+			for address in msg.addrs:
+				node = Link(address.ip, address.port)
+				self.results.add(node)
+			return True
+		else:
+		    print("something else: ", msg.command, msg)
+
+		return False
+
+
+bitcoin.SelectParams('mainnet') 
+linked = Linked_List()  # of potential nodes
+known_set = set()  # docs imply this is a hashset.  good nodes
+known_bad = set()  # offline nodes
+version_strings = {}  # string : count
+
 
 # server_ip = "75.132.169.13"
 # server_ip = "199.233.246.224"
@@ -85,33 +136,16 @@ server_ip = "94.112.102.36"
 # server_ip = "70.15.155.219"
 # server_ip = "81.64.219.50"
 # server_ip = "73.20.98.44"
-# client_ip = "67.172.198.9"
-
-client_ip = "1.1.1.1"  #seems to serve no purpose
 
 linked.add(Link(server_ip, 8333))
-# for each thing in linked list
+
 while linked.has_next():
 	link = linked.pop()
 	print('\nTarget: ', link.ip,':',link.port)
 
-	s = socket.socket()
-	bind_to_port(s)
-	s.connect( (link.ip,link.port) )  # TODO add support for IP addresses that are offline
-
-	# Send Version packet
-	s.send( version_pkt(client_ip, link).to_bytes() )
-
-	# Try to get addresses
-	s.send(msg_getaddr().to_bytes())
-	while not processMessage():  # TODO set timeout or something for multiple addr messages
-		pass
-	print("Known set: ", len(known_set), "\nLinked list: ", len(linked))
-	s.close()
-
-
-
-# Send Addrs
-# s.send( addr_pkt(["252.11.1.2", "EEEE:7777:8888:AAAA::1"]).to_bytes() )
-
-# tcpkill -i wlan0 port 8333
+	bs = BitcoinSocket(link)
+	if not bs.connect():
+		continue
+	bs.listen_until_addresses()
+	linked.add_linked_list( bs.get_results() )  # TODO these results need to be pruned
+	
