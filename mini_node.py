@@ -10,6 +10,7 @@ class Wrapper(object):
 	def __init__(self, a_socket):
 		self.socks = a_socket
 
+	# TODO: consider changing this to handle mid-connection drop outs
 	def read(self, n):
 		# this shouldn't have to be a bug fix
 		li = []
