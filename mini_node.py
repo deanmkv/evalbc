@@ -87,12 +87,12 @@ class BitcoinSocket(object):  # TODO could add better debug statements
 	#     return msg
 
 	def _process_message(self):
-		msg = MsgSerializable.stream_deserialize(Wrapper(s))
+		msg = MsgSerializable.stream_deserialize(Wrapper(self.my_socket))
 
 		if msg.command == b"version":  # TODO conglomerate these message strings into a dictionary
 		    # Send Verack
 		    print('version: ', msg.strSubVer, msg.nVersion)
-		    s.send( msg_verack().to_bytes() )
+		    self.my_socket.send( msg_verack().to_bytes() )
 
 		elif msg.command == b"verack":
 		    print("verack: ", msg)
@@ -102,7 +102,7 @@ class BitcoinSocket(object):  # TODO could add better debug statements
 
 		elif msg.command == b"ping":
 			print("ping: ", msg)
-			s.send(msg_pong(msg.nonce).to_bytes())
+			self.my_socket.send(msg_pong(msg.nonce).to_bytes())
 
 		elif msg.command == b"getheaders":
 			print("getheaders received ")
