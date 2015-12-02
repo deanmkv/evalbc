@@ -4,20 +4,29 @@ from bitcoin.net import CAddress
 from linked_list import Linked_List, Link
 
 
-# TODO this new implementation needs testing, and maybe debug statements to verify code works
+# TODO maybe debug statements to better understand what is happening
 
 class Wrapper(object):
 	def __init__(self, a_socket):
 		self.socks = a_socket
 
 	def read(self, n):
-		return self.socks.recv(n, socket.MSG_WAITALL)
+		# this shouldn't have to be a bug fix
+		li = []
+		total = 0
+		while total < n:
+			bytes_obj = self.socks.recv(n - total, socket.MSG_WAITALL) 
+			li.append( bytes_obj )
+			total += len(bytes_obj)
+		return b''.join(li)
+		# could have used bytes_obj += self.socks.recv(...), but that is n^2 time
+		# return self.socks.recv(n, socket.MSG_WAITALL)
 
 
-class BitcoinSocket(object):  # TODO could add better debug statements
+class BitcoinSocket(object):
 	client_ip = "1.1.1.1"  # TODO This value doesn't seem to matter, but we should make sure or use your IP address
 							# or best case write code to find your public facing IP address
-	_port_num = 8000
+	_port_num = 8000		# also, this port is the LAN port, not internet port, so the same issue is here
 
 	def get_port():  # NOTE: this is not an instance method
 		"""In the future this will allow a good way to support parallelization"""
@@ -29,7 +38,9 @@ class BitcoinSocket(object):  # TODO could add better debug statements
 		self.link = link
 		self.results = Linked_List()
 		self.my_socket = socket.socket()
+		self.conn_ref = False
 		# bind socket to free port
+		ref_count = 0
 		while True:
 			self.port = BitcoinSocket.get_port()  # autoimcrement
 			try:
@@ -37,12 +48,20 @@ class BitcoinSocket(object):  # TODO could add better debug statements
 				break;
 			except OSError:  # if port is not free
 				pass
+				# print("os error")
+			except ConnectionRefusedError:
+				ref_count += 1
+				if ref_count > 3:
+					self.conn_ref = True
+					break;
+				print("conn refused, trying again")
+
 		self.my_socket.settimeout(timeout)
 
 	def connect(self):
 		"""Connect to the destination, returning True on success"""
 		try:
-			self.my_socket.connect( (self.link.ip,self.link.port) )  # TODO test: add support for IP addresses that are offline
+			self.my_socket.connect( (self.link.ip,self.link.port) )
 		except socket.timeout:
 			return False
 		return True
@@ -144,8 +163,9 @@ while linked.has_next():
 	print('\nTarget: ', link.ip,':',link.port)
 
 	bs = BitcoinSocket(link)
-	if not bs.connect():
+	if bs.conn_ref or not bs.connect():
 		continue
 	bs.listen_until_addresses()
+	print("done")
 	linked.add_linked_list( bs.get_results() )  # TODO these results need to be pruned
 	
