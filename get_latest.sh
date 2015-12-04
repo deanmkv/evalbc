@@ -1,0 +1,1 @@
+ curl -H "Accept: application/json; indent=4" https://bitnodes.21.co/api/v1/snapshots/latest/ > latest.json
