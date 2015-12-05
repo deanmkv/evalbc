@@ -1,6 +1,6 @@
 import socket, time, bitcoin
-from bitcoin.messages import msg_version, msg_verack, msg_addr, MsgSerializable, msg_getaddr, msg_pong, msg_ping
-from bitcoin.net import CAddress
+from bitcoin.messages import msg_version, msg_verack, msg_addr, MsgSerializable, msg_getaddr, msg_pong, msg_ping, msg_inv
+from bitcoin.net import CAddress, CInv
 from linked_list import Linked_List, Link
 
 
@@ -82,7 +82,11 @@ class BitcoinSocket(object):
 	def send_transaction(self):
 		import createTransaction
 		tx = createTransaction.make_transaction()
-		inv_msg = False
+		inv_msg = msg_inv()
+		tx_inv = CInv()
+		tx_inv.type = 1
+		tx_inv.hash = tx
+		inv_msg.inv.append(tx_inv)
 		self.my_socket.send(inv_msg)
 		while self._process_message() != "donedone":
 			pass
@@ -97,6 +101,10 @@ class BitcoinSocket(object):
 		while not self._process_message():  # TODO set timeout or something for multiple addr messages
 			pass
 		self.my_socket.close()
+
+	def listen_forever(self):
+		while True:
+			self._process_message()
 
 	def get_results(self):
 		"""Returns a linked list of all new potential nodes (needs pruning)."""
@@ -138,7 +146,8 @@ class BitcoinSocket(object):
 		    return "verack"
 		elif msg.command == b"inv":
 			print("inv: ", msg.inv)
-
+			print(dir(msg))
+			print(type(msg.inv))
 		elif msg.command == b"ping":
 			print("ping: ", msg)
 			self.my_socket.send(msg_pong(msg.nonce).to_bytes())
@@ -175,6 +184,7 @@ server_ip = "94.112.102.36"
 # server_ip = "70.15.155.219"
 # server_ip = "81.64.219.50"
 # server_ip = "73.20.98.44"
+server_ip = "67.172.198.9"
 
 linked.add(Link(server_ip, 8333))
 
@@ -190,6 +200,7 @@ if linked.has_next():
 	# bs.listen_until_addresses()
 	# linked.add_linked_list( bs.get_results() )  # TODO these results need to be pruned
 	bs.listen_until_acked()
+	bs.listen_forever()
 	bs.send_transaction()
 	print("done")
 	
