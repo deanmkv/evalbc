@@ -1,5 +1,5 @@
 import socket, time, bitcoin
-from bitcoin.messages import msg_version, msg_verack, msg_addr, MsgSerializable, msg_getaddr, msg_pong, msg_ping, msg_inv
+from bitcoin.messages import msg_version, msg_verack, msg_addr, MsgSerializable, msg_getaddr, msg_pong, msg_ping, msg_inv, msg_tx
 from bitcoin.net import CAddress, CInv
 from linked_list import Linked_List, Link
 
@@ -81,15 +81,16 @@ class BitcoinSocket(object):
 
 	def send_transaction(self):
 		import createTransaction
-		tx = createTransaction.make_transaction()
+		tx = createTransaction.make_self_transaction()
 		inv_msg = msg_inv()
-		tx_inv = CInv()
+		tx_inv = CInv() 
 		tx_inv.type = 1
-		tx_inv.hash = tx
+		tx_inv.hash = tx.GetHash()
 		inv_msg.inv.append(tx_inv)
-		self.my_socket.send(inv_msg)
-		while self._process_message() != "donedone":
+		self.my_socket.send(inv_msg.to_bytes())
+		while self._process_message(transaction=tx) != "donedone":
 			pass
+		print("leaving send_transaction()")
 
 	def listen_until_addresses(self):
 		"""Implements the Bitcoin protocol, sending info until it gets an addr message"""
@@ -103,6 +104,7 @@ class BitcoinSocket(object):
 		self.my_socket.close()
 
 	def listen_forever(self):
+		print("starting to listen forever")
 		while True:
 			self._process_message()
 
@@ -146,8 +148,8 @@ class BitcoinSocket(object):
 		    return "verack"
 		elif msg.command == b"inv":
 			print("inv: ", msg.inv)
-			print(dir(msg))
-			print(type(msg.inv))
+			# print(dir(msg))
+			# print(type(msg.inv))
 		elif msg.command == b"ping":
 			print("ping: ", msg)
 			self.my_socket.send(msg_pong(msg.nonce).to_bytes())
@@ -161,6 +163,19 @@ class BitcoinSocket(object):
 				node = Link(address.ip, address.port)
 				self.results.add(node)
 			return True
+		elif msg.command == b"getdata":
+			print("getdata: ", msg.inv)
+			if 'transaction' not in kwargs:
+				return False
+			the_tx =  kwargs['transaction']
+			for request in msg.inv:
+				if request.hash == the_tx.GetHash():
+					# new message to send transaction
+					to_send = msg_tx()
+					to_send.tx = the_tx
+					self.my_socket.send(to_send.to_bytes())
+					print("SENT OUR MOTHER FUCKING TRANSACTION")
+					return "donedone"
 		else:
 		    print("something else: ", msg.command, msg)
 
@@ -185,6 +200,7 @@ server_ip = "94.112.102.36"
 # server_ip = "81.64.219.50"
 # server_ip = "73.20.98.44"
 server_ip = "67.172.198.9"
+server_ip = "54.166.212.28"
 
 linked.add(Link(server_ip, 8333))
 
@@ -200,7 +216,8 @@ if linked.has_next():
 	# bs.listen_until_addresses()
 	# linked.add_linked_list( bs.get_results() )  # TODO these results need to be pruned
 	bs.listen_until_acked()
-	bs.listen_forever()
 	bs.send_transaction()
+	bs.listen_forever()
+	
 	print("done")
 	
