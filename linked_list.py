@@ -53,7 +53,7 @@ class Linked_List(object):
 		return self.length
 
 class Link(object):
-	def __init__(self, ip, port):
+	def __init__(self, ip, port, ipv6 = False):
 		self.next = None
 		self.ip = ip
 		self.port = port
