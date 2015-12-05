@@ -2,10 +2,11 @@ import requests
 
 #use this method to get the transaction confidence factor given the hash of the transaction
 def getTransactionConfidenceFactor(txID):
-    r = requests.get('https://api.blockcypher.com/v1/btc/main/txs/' + txID)
-    print((r.json())['confidence'])
-    if 'receive_count' in transaction:
-    	print(transaction['receive_count'])
+    transaction = requests.get('https://api.blockcypher.com/v1/btc/main/txs/' + txID)
+    print((transaction.json())['confidence'])
+    print(transaction.json())
+    if 'receive_count' in (transaction.json()):
+    	print(transaction.json()['receive_count'])
     else:
     	print('No receive_count')
 
