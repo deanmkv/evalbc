@@ -67,10 +67,29 @@ class BitcoinSocket(object):
 			return False
 		return True
 
-	def listen_until_addresses(self):
-		"""Implements the Bitcoin protocol, sending info until it gets an addr message"""
+	def listen_until_acked(self):
 		# Send Version packet
 		self.my_socket.send( self._make_version_pkt().to_bytes() )
+		ver_rec = False
+		verack_rec = False
+		while not verack_rec and not ver_rec:
+			res = self._process_message()
+			if res == "version":
+				ver_rec = True
+			elif res == "verack":
+				verack_rec = True 
+
+	def send_transaction(self):
+		import createTransaction
+		tx = createTransaction.make_transaction()
+		inv_msg = False
+		self.my_socket.send(inv_msg)
+		while self._process_message() != "donedone":
+			pass
+
+	def listen_until_addresses(self):
+		"""Implements the Bitcoin protocol, sending info until it gets an addr message"""
+		
 
 		# Try to get addresses
 		self.my_socket.send(msg_getaddr().to_bytes())
@@ -106,17 +125,17 @@ class BitcoinSocket(object):
 	#     msg.addrs = addrs
 	#     return msg
 
-	def _process_message(self):
+	def _process_message(self, **kwargs):
 		msg = MsgSerializable.stream_deserialize(Wrapper(self.my_socket))
 
 		if msg.command == b"version":  # TODO conglomerate these message strings into a dictionary
 		    # Send Verack
 		    print('version: ', msg.strSubVer, msg.nVersion)
 		    self.my_socket.send( msg_verack().to_bytes() )
-
+		    return "version"
 		elif msg.command == b"verack":
 		    print("verack: ", msg)
-
+		    return "verack"
 		elif msg.command == b"inv":
 			print("inv: ", msg.inv)
 
@@ -159,14 +178,18 @@ server_ip = "94.112.102.36"
 
 linked.add(Link(server_ip, 8333))
 
-while linked.has_next():
+import sys
+
+if linked.has_next():
 	link = linked.pop()
 	print('\nTarget: ', link.ip,':',link.port)
 
 	bs = BitcoinSocket(link)
 	if bs.conn_ref or not bs.connect():
-		continue
-	bs.listen_until_addresses()
+		sys.exit(0)
+	# bs.listen_until_addresses()
+	# linked.add_linked_list( bs.get_results() )  # TODO these results need to be pruned
+	bs.listen_until_acked()
+	bs.send_transaction()
 	print("done")
-	linked.add_linked_list( bs.get_results() )  # TODO these results need to be pruned
 	
