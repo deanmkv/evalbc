@@ -33,13 +33,9 @@ class BitcoinSocket(object):
 
 	def get_port():  # NOTE: this is not an instance method
 		"""In the future this will allow a good way to support parallelization"""
-		port_lock.acquire()
-
-		val = BitcoinSocket._port_num
-		BitcoinSocket._port_num += 1
-
-		port_lock.release()
-
+		with port_lock:
+			val = BitcoinSocket._port_num
+			BitcoinSocket._port_num += 1
 		return val
 
 	def __init__(self, link, timeout=10):
