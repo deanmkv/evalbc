@@ -6,11 +6,13 @@ import linked_list
 import subprocess
 import socket
 import threading
+from bitcoin import base58
 
 notInDB = []
 inDBZeroCount = []
 inDBMoreThanOneCount = []
 timeouts = []
+errorSet = []
 
 def OPsPerLink(link):
     try:
@@ -22,16 +24,26 @@ def OPsPerLink(link):
         print(threading.current_thread().name,"sending inv: ", link)
         txHash = bs.send_transaction()
         print(threading.current_thread().name,"finished: ", link)
-    except:
+    except Exception as e:
+        strE = str(e)
+        if ("BitcoinSocket issue " + strE) not in errorSet:
+            errorSet.append("BitcoinSocket issue " + strE)
         print("An error occured", link)
         print(threading.current_thread().name,"finished: ", link)
+        # print(e, "An error occured", link)
+        print(errorSet)
         timeouts.append(link)
         return
 
     for x in range(0,5):
         try:
-            r = requests.get('https://api.blockcypher.com/v1/btc/main/txs/' + txHash)
-        except:
+            r = requests.get('https://api.blockcypher.com/v1/btc/main/txs/' + base58.encode(txHash))
+        except Exception as e:
+            strE = str(e)
+            if ("request issue here " + strE) not in errorSet:
+                errorSet.append("request issue here " + strE)
+            print("request error" + str(e) + base58.encode(txHash))
+            print(errorSet)
             # print("retrying api call for the ",x+1,"th time")
             time.sleep(2)
             r = "still exception after 5 API calls"
@@ -41,7 +53,7 @@ def OPsPerLink(link):
         inDBZeroCount.append(link)
     elif r != "still exception after 5 API calls" and r.json()['receive_count'] > 0:
         inDBMoreThanOneCount.append(link)
-    
+    print(errorSet)
     # bs.listen_forever()
     return
 
