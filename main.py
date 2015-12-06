@@ -36,12 +36,13 @@ if __name__=="__main__":
 			unique_id += 1
 		
 		print("waiting for all threads to complete")
-	except KeyboardInterrupt:
-		pass
-	finally:
 		master_thread = threading.current_thread().ident
 		for i in threading.enumerate():
 			if master_thread != i.ident:
 				i.join()
+		print("all threads done")
+	except KeyboardInterrupt:
+		pass
+	finally:
 		OPsPerLink.print_lists()
 		OPsPerLink.write_lists()
