@@ -81,14 +81,14 @@ class BitcoinSocket(object):
 		ver_rec = False
 		verack_rec = False
 		iterations = 0
-		while not verack_rec and not ver_rec and iterations < 100:
+		while not verack_rec and not ver_rec and iterations < 15:
 			res = self._process_message()
 			if res == "version":
 				ver_rec = True
 			elif res == "verack":
 				verack_rec = True
 
-			if iterations > 80:
+			if iterations > 13:
 				print("stuck on ack? tid: ", threading.get_ident(), '\n\ttarget: ', link)
 			iterations += 1
 
@@ -102,9 +102,9 @@ class BitcoinSocket(object):
 		inv_msg.inv.append(tx_inv)
 		self.my_socket.send(inv_msg.to_bytes())
 		iterations = 0
-		while self._process_message(transaction=tx) != "donedone" and iterations < 100:
+		while self._process_message(transaction=tx) != "donedone" and iterations < 50:
 			pass
-			if iterations > 80:
+			if iterations > 45:
 				print("stuck on send? tid: ", threading.get_ident(), '\n\ttarget: ', link)
 			iterations += 1
 		# print("leaving send_transaction()")
