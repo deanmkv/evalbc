@@ -4,13 +4,19 @@ import OPsPerLink
 import threading
 import subprocess
 
+def a_thread(*args, **kwargs):
 
-def a_thread():
-	pass
+	OPsPerLink.OPsPerLink(kwargs['link'])
 
 if __name__=="__main__":
 	subprocess.call("bash get_latest.sh", shell=True)
 	ip4list = read.read("latest.json")
 	for link in ip4list:
-		print('\nTarget: ', link.ip,':',link.port)
-		OPsPerLink.OPsPerLink(link)
+		threading.Thread(target=a_thread, link=link).start()
+	
+	print("waiting for all threads to complete")
+	for i in threading.enumerate():
+		i.join()
+
+	OPsPerLink.print_lists()
+	OPsPerLink.write_lists()

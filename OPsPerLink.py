@@ -1,4 +1,3 @@
-__author__ = 'RunzeZhao'
 import mini_node
 import sys
 import requests
@@ -37,16 +36,46 @@ def OPsPerLink(link):
         inDBZeroCount.append(link)
     elif r != "still exception after 5 API calls" and r.json()['receive_count'] > 0:
         inDBMoreThanOneCount.append(link)
+    
+    # bs.listen_forever()
+    return
+
+def print_lists():
     print("notInDB: ", notInDB)
     print("inDBZeroCount: ", inDBZeroCount)
     print("inDBMoreThanOneCount: ", inDBMoreThanOneCount)
     print("timeouts: ", timeouts)
-    if len(inDBMoreThanOneCount) > 0 or len(inDBZeroCount) > 0:
-        with open("filename.txt", 'w') as f:
-            f.write("anything please")
-    # bs.listen_forever()
-    return
 
+def write_lists():
+    if len(inDBMoreThanOneCount) > 0:
+        with open("dbone.txt", 'w') as f:
+            for i in inDBMoreThanOneCount:
+                f.write(str(i), '\n')
+    else:
+        print("Nothing in inDBMoreThanOneCount")
+
+    if len(inDBZeroCount) > 0:
+        with open("dbzero.txt", 'w') as f:
+            for i in inDBZeroCount:
+                f.write(str(i), '\n')
+    else:
+        print("Nothing in inDBZeroCount")
+    
+    if len(timeouts) > 0:
+        with open("timeouts.txt", 'w') as f:
+            for i in timeouts:
+                f.write(str(i), '\n')
+    else:
+        print("Nothing in timeouts")
+
+    if len(notInDB) > 0:
+        with open("dbnone.txt", 'w') as f:
+            for i in notInDB:
+                f.write(str(i), '\n')
+    else:
+        print("Nothing in notInDB")
+        
+    
 if __name__ == "__main__":
     l1 = linked_list.Link("67.172.198.9",8333)
     print("here")

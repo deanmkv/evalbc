@@ -1,9 +1,10 @@
 import socket, time, bitcoin
+import asyncio
 from bitcoin.messages import msg_version, msg_verack, msg_addr, MsgSerializable, msg_getaddr, msg_pong, msg_ping, msg_inv, msg_tx
 from bitcoin.net import CAddress, CInv
 from linked_list import Linked_List, Link
 
-
+port_lock = asyncio.Lock()
 
 # TODO maybe debug statements to better understand what is happening
 
@@ -32,8 +33,14 @@ class BitcoinSocket(object):
 
 	def get_port():  # NOTE: this is not an instance method
 		"""In the future this will allow a good way to support parallelization"""
+		port_lock.acquire()
+
+		val = BitcoinSocket._port_num
 		BitcoinSocket._port_num += 1
-		return BitcoinSocket._port_num
+		
+		port_lock.release()
+		
+		return val
 
 	def __init__(self, link, timeout=10):
 		"""Creates a socket and binds it to a free, unique port"""
