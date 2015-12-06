@@ -18,8 +18,8 @@ def OPsPerLink(link):
             sys.exit(0)
         bs.listen_until_acked()
         txHash = bs.send_transaction()
-    except socket.timeout:
-        print("Timeout on", link)
+    except:
+        print("An error occured", link)
         timeouts.append(link)
         return
 
