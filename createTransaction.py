@@ -14,9 +14,17 @@ from bitcoin.wallet import CBitcoinAddress, CBitcoinSecret, P2PKHBitcoinAddress
 
 SelectParams('mainnet')
 
+randomness = None
+rand_open = False
+
 def get_randomness(filename):
+	global rand_open
+	global randomness
+	if rand_open:
+		return randomness
 	with open(filename, 'r') as f:
 		randomness = bytes(f.readline().strip(), 'utf-8')
+	rand_open = True
 	return randomness
 
 def make_self_transaction():

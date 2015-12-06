@@ -5,6 +5,7 @@ import time
 import linked_list
 import subprocess
 import socket
+import threading
 
 notInDB = []
 inDBZeroCount = []
@@ -15,11 +16,15 @@ def OPsPerLink(link):
     try:
         bs = mini_node.BitcoinSocket(link)
         if bs.conn_ref or not bs.connect():
-            sys.exit(0)
+            raise Exception  # to be added to timeouts list
+        print(threading.current_thread().name,"waiting for ack: ", link)
         bs.listen_until_acked()
+        print(threading.current_thread().name,"sending inv: ", link)
         txHash = bs.send_transaction()
+        print(threading.current_thread().name,"finished: ", link)
     except:
         print("An error occured", link)
+        print(threading.current_thread().name,"finished: ", link)
         timeouts.append(link)
         return
 

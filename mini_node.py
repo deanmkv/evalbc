@@ -186,6 +186,7 @@ class BitcoinSocket(object):
 			the_tx =  kwargs['transaction']
 			for request in msg.inv:
 				if request.hash == the_tx.GetHash():
+					print(threading.current_thread().name,"sending tx: ", link)
 					# new message to send transaction
 					to_send = msg_tx()
 					to_send.tx = the_tx
