@@ -4,6 +4,10 @@ import OPsPerLink
 import threading
 import subprocess
 
+
+def a_thread():
+	pass
+
 if __name__=="__main__":
 	subprocess.call("bash get_latest.sh", shell=True)
 	ip4list = read.read("latest.json")

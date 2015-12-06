@@ -5,17 +5,25 @@ import requests
 import time
 import linked_list
 import subprocess
+import socket
 
 notInDB = []
 inDBZeroCount = []
 inDBMoreThanOneCount = []
+timeouts = []
 
 def OPsPerLink(link):
-    bs = mini_node.BitcoinSocket(link)
-    if bs.conn_ref or not bs.connect():
-        sys.exit(0)
-    bs.listen_until_acked()
-    txHash = bs.send_transaction()
+    try:
+        bs = mini_node.BitcoinSocket(link)
+        if bs.conn_ref or not bs.connect():
+            sys.exit(0)
+        bs.listen_until_acked()
+        txHash = bs.send_transaction()
+    except socket.timeout:
+        print("Timeout on", link)
+        timeouts.append(link)
+        return
+
     for x in range(0,5):
         try:
             r = requests.get('https://api.blockcypher.com/v1/btc/main/txs/' + txHash)
@@ -32,6 +40,7 @@ def OPsPerLink(link):
     print("notInDB: ", notInDB)
     print("inDBZeroCount: ", inDBZeroCount)
     print("inDBMoreThanOneCount: ", inDBMoreThanOneCount)
+    print("timeouts: ", timeouts)
     if len(inDBMoreThanOneCount) > 0 or len(inDBZeroCount) > 0:
         with open("filename.txt", 'w') as f:
             f.write("anything please")

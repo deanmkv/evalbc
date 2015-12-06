@@ -14,7 +14,7 @@ def diag(thing):
 	print(thing.daemon)
 	print("~~~~~~~~~~~~~~")
 
-thing = threading.Thread(target=work, daemon=True)
+thing = threading.Thread(target=work, args=(), daemon=True)
 
 diag(thing)
 print("Started thread")
