@@ -31,7 +31,7 @@ def OPsPerLink(link):
         print("An error occured", link)
         print(threading.current_thread().name,"finished: ", link)
         # print(e, "An error occured", link)
-        # print(errorSet)
+        print(errorSet)
         timeouts.append(link)
         return
 
