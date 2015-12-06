@@ -1,10 +1,10 @@
 import socket, time, bitcoin
-import asyncio
+import threading
 from bitcoin.messages import msg_version, msg_verack, msg_addr, MsgSerializable, msg_getaddr, msg_pong, msg_ping, msg_inv, msg_tx
 from bitcoin.net import CAddress, CInv
 from linked_list import Linked_List, Link
 
-port_lock = asyncio.Lock()
+port_lock = threading.Lock()
 
 # TODO maybe debug statements to better understand what is happening
 
@@ -39,7 +39,7 @@ class BitcoinSocket(object):
 		BitcoinSocket._port_num += 1
 		
 		port_lock.release()
-		
+
 		return val
 
 	def __init__(self, link, timeout=10):
@@ -63,7 +63,7 @@ class BitcoinSocket(object):
 				if ref_count > 3:
 					self.conn_ref = True
 					break;
-				print("conn refused, trying again")
+				# print("conn refused, trying again")
 
 		self.my_socket.settimeout(timeout)
 
@@ -98,7 +98,7 @@ class BitcoinSocket(object):
 		self.my_socket.send(inv_msg.to_bytes())
 		while self._process_message(transaction=tx) != "donedone":
 			pass
-		print("leaving send_transaction()")
+		# print("leaving send_transaction()")
 		return tx_inv.hash
 
 	def listen_until_addresses(self):
@@ -149,31 +149,33 @@ class BitcoinSocket(object):
 
 		if msg.command == b"version":  # TODO conglomerate these message strings into a dictionary
 		    # Send Verack
-		    print('version: ', msg.strSubVer, msg.nVersion)
+		    # print('version: ', msg.strSubVer, msg.nVersion)
 		    self.my_socket.send( msg_verack().to_bytes() )
 		    return "version"
 		elif msg.command == b"verack":
-		    print("verack: ", msg)
+		    # print("verack: ", msg)
 		    return "verack"
 		elif msg.command == b"inv":
-			print("inv: ", msg.inv)
+			pass
+			# print("inv: ", msg.inv)
 			# print(dir(msg))
 			# print(type(msg.inv))
 		elif msg.command == b"ping":
-			print("ping: ", msg)
+			# print("ping: ", msg)
 			self.my_socket.send(msg_pong(msg.nonce).to_bytes())
 
 		elif msg.command == b"getheaders":
-			print("getheaders received ")
+			pass
+			# print("getheaders received ")
 
 		elif msg.command == b"addr":  # TODO this needs multi-message support
-			print("addr: size ", len(msg.addrs))
+			# print("addr: size ", len(msg.addrs))
 			for address in msg.addrs:
 				node = Link(address.ip, address.port)
 				self.results.add(node)
 			return True
 		elif msg.command == b"getdata":
-			print("getdata: ", msg.inv)
+			# print("getdata: ", msg.inv)
 			if 'transaction' not in kwargs:
 				return False
 			the_tx =  kwargs['transaction']
@@ -183,10 +185,11 @@ class BitcoinSocket(object):
 					to_send = msg_tx()
 					to_send.tx = the_tx
 					self.my_socket.send(to_send.to_bytes())
-					print("SENT OUR PC BRO TRANSACTION")
+					# print("SENT OUR PC BRO TRANSACTION")
 					return "donedone"
 		else:
-		    print("something else: ", msg.command, msg)
+		    pass
+		    # print("something else: ", msg.command, msg)
 
 		return False
 

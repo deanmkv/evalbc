@@ -11,8 +11,9 @@ def a_thread(*args, **kwargs):
 if __name__=="__main__":
 	subprocess.call("bash get_latest.sh", shell=True)
 	ip4list = read.read("latest.json")
+	print("starting to create all nodes")
 	for link in ip4list:
-		threading.Thread(target=a_thread, link=link).start()
+		threading.Thread(target=a_thread, kwargs={'link':link}).start()
 	
 	print("waiting for all threads to complete")
 	for i in threading.enumerate():

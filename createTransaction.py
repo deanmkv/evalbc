@@ -114,8 +114,8 @@ def make_transaction(sum_inputs, input_hashes, output_addr, seckey, mining_fee=0
 	# Done! Print the transaction to standard output with the bytes-to-hex
 	# function.
 	# send the message printed out to other nodes and they will receive the transaction
-	print("Raw TX: ", b2x(tx.serialize()))
-	print("TX hash: ", b2lx(tx.GetHash()))
+	# print("Raw TX: ", b2x(tx.serialize()))
+	# print("TX hash: ", b2lx(tx.GetHash()))
 	return tx
 
 if __name__ == "__main__":
