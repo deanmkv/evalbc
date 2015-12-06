@@ -4,6 +4,7 @@ import sys
 import requests
 import time
 import linked_list
+import subprocess
 
 def OPsPerLink(link):
     notInDB = []
@@ -30,7 +31,11 @@ def OPsPerLink(link):
     print("notInDB: ", notInDB)
     print("inDBZeroCount: ", inDBZeroCount)
     print("inDBMoreThanOneCount: ", inDBMoreThanOneCount)
-    bs.listen_forever()
+    if len(inDBMoreThanOneCount) > 0 or len(inDBZeroCount) > 0:
+        with open("filename.txt", 'w') as f:
+            f.write("anything please")
+    # bs.listen_forever()
+    return
 
 l1 = linked_list.Link("67.172.198.9",8333)
 print("here")

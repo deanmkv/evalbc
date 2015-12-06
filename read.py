@@ -11,8 +11,9 @@ def read(filename):
 	for obj in data["nodes"]:
 		temp = obj.split(":")
 		if len(temp) == 2:
-			results.append(Link(temp[0],temp[1]))
+			results.append(Link(temp[0],int(temp[1])))
 		else:
+			pass
 			# temp = obj.split("]")
 			# results.append(Link(temp[0][1:],temp[1],True))
 	return results

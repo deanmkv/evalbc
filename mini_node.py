@@ -4,6 +4,7 @@ from bitcoin.net import CAddress, CInv
 from linked_list import Linked_List, Link
 
 
+
 # TODO maybe debug statements to better understand what is happening
 
 class Wrapper(object):
@@ -205,22 +206,21 @@ if __name__ == "__main__":
 	# blockcypher ip address but we don't knowthe port so we can't connect
 	# server_ip = "54.166.212.28"
 
-	linked.add(Link(server_ip, 8333))
+	# linked.add(Link(server_ip, 8333))
 
 	import sys
-
 	if linked.has_next():
-		link = linked.pop()
-		print('\nTarget: ', link.ip,':',link.port)
+		for link in ip4list:
+			print('\nTarget: ', link.ip,':',link.port)
 
-		bs = BitcoinSocket(link)
-		if bs.conn_ref or not bs.connect():
-			sys.exit(0)
-		# bs.listen_until_addresses()
-		# linked.add_linked_list( bs.get_results() )  # TODO these results need to be pruned
-		bs.listen_until_acked()
-		bs.send_transaction()
-		bs.listen_forever()
+			bs = BitcoinSocket(link)
+			if bs.conn_ref or not bs.connect():
+				sys.exit(0)
+			# bs.listen_until_addresses()
+			# linked.add_linked_list( bs.get_results() )  # TODO these results need to be pruned
+			bs.listen_until_acked()
+			bs.send_transaction()
+			bs.listen_forever()
 
 		print("done")
 
