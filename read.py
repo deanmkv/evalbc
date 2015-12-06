@@ -13,8 +13,8 @@ def read(filename):
 		if len(temp) == 2:
 			results.append(Link(temp[0],temp[1]))
 		else:
-			temp = obj.split("]")
-			results.append(Link(temp[0][1:],temp[1],True))
+			# temp = obj.split("]")
+			# results.append(Link(temp[0][1:],temp[1],True))
 	return results
 
 if __name__=="__main__":
