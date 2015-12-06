@@ -50,28 +50,28 @@ def write_lists():
     if len(inDBMoreThanOneCount) > 0:
         with open("dbone.txt", 'w') as f:
             for i in inDBMoreThanOneCount:
-                f.write(str(i), '\n')
+                f.write(str(i) + '\n')
     else:
         print("Nothing in inDBMoreThanOneCount")
 
     if len(inDBZeroCount) > 0:
         with open("dbzero.txt", 'w') as f:
             for i in inDBZeroCount:
-                f.write(str(i), '\n')
+                f.write(str(i) + '\n')
     else:
         print("Nothing in inDBZeroCount")
     
     if len(timeouts) > 0:
         with open("timeouts.txt", 'w') as f:
             for i in timeouts:
-                f.write(str(i), '\n')
+                f.write(str(i) + '\n')
     else:
         print("Nothing in timeouts")
 
     if len(notInDB) > 0:
         with open("dbnone.txt", 'w') as f:
             for i in notInDB:
-                f.write(str(i), '\n')
+                f.write(str(i) + '\n')
     else:
         print("Nothing in notInDB")
         
