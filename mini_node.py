@@ -91,6 +91,7 @@ class BitcoinSocket(object):
 		while self._process_message(transaction=tx) != "donedone":
 			pass
 		print("leaving send_transaction()")
+		return tx_inv.hash
 
 	def listen_until_addresses(self):
 		"""Implements the Bitcoin protocol, sending info until it gets an addr message"""
@@ -181,43 +182,45 @@ class BitcoinSocket(object):
 
 		return False
 
+if __name__ == "__main__":
 
-bitcoin.SelectParams('mainnet') 
-linked = Linked_List()  # of potential nodes
-known_set = set()  # docs imply this is a hashset.  good nodes
-known_bad = set()  # offline nodes
-version_strings = {}  # string : count
+	bitcoin.SelectParams('mainnet')
+	linked = Linked_List()  # of potential nodes
+	known_set = set()  # docs imply this is a hashset.  good nodes
+	known_bad = set()  # offline nodes
+	version_strings = {}  # string : count
 
 
-# server_ip = "75.132.169.13"
-# server_ip = "199.233.246.224"
-server_ip = "94.112.102.36"
-# server_ip = "95.191.251.158"
-# server_ip = "188.230.153.108"
-# server_ip = "186.159.101.96"
-# server_ip = "76.170.160.69"
-# server_ip = "70.15.155.219"
-# server_ip = "81.64.219.50"
-# server_ip = "73.20.98.44"
-server_ip = "67.172.198.9"
-server_ip = "54.166.212.28"
+	# server_ip = "75.132.169.13"
+	# server_ip = "199.233.246.224"
+	server_ip = "94.112.102.36"
+	# server_ip = "95.191.251.158"
+	# server_ip = "188.230.153.108"
+	# server_ip = "186.159.101.96"
+	# server_ip = "76.170.160.69"
+	# server_ip = "70.15.155.219"
+	# server_ip = "81.64.219.50"
+	# server_ip = "73.20.98.44"
+	server_ip = "67.172.198.9"
+	# blockcypher ip address but we don't knowthe port so we can't connect
+	# server_ip = "54.166.212.28"
 
-linked.add(Link(server_ip, 8333))
+	linked.add(Link(server_ip, 8333))
 
-import sys
+	import sys
 
-if linked.has_next():
-	link = linked.pop()
-	print('\nTarget: ', link.ip,':',link.port)
+	if linked.has_next():
+		link = linked.pop()
+		print('\nTarget: ', link.ip,':',link.port)
 
-	bs = BitcoinSocket(link)
-	if bs.conn_ref or not bs.connect():
-		sys.exit(0)
-	# bs.listen_until_addresses()
-	# linked.add_linked_list( bs.get_results() )  # TODO these results need to be pruned
-	bs.listen_until_acked()
-	bs.send_transaction()
-	bs.listen_forever()
-	
-	print("done")
-	
+		bs = BitcoinSocket(link)
+		if bs.conn_ref or not bs.connect():
+			sys.exit(0)
+		# bs.listen_until_addresses()
+		# linked.add_linked_list( bs.get_results() )  # TODO these results need to be pruned
+		bs.listen_until_acked()
+		bs.send_transaction()
+		bs.listen_forever()
+
+		print("done")
+
