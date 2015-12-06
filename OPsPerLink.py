@@ -27,7 +27,7 @@ def OPsPerLink(link):
         try:
             r = requests.get('https://api.blockcypher.com/v1/btc/main/txs/' + txHash)
         except:
-            print("retrying api call for the ",x+1,"th time")
+            # print("retrying api call for the ",x+1,"th time")
             time.sleep(2)
             r = "still exception after 5 API calls"
     if r == "still exception after 5 API calls":
