@@ -176,7 +176,7 @@ class BitcoinSocket(object):
 					to_send = msg_tx()
 					to_send.tx = the_tx
 					self.my_socket.send(to_send.to_bytes())
-					print("SENT OUR MOTHER FUCKING TRANSACTION")
+					print("SENT OUR PC BRO TRANSACTION")
 					return "donedone"
 		else:
 		    print("something else: ", msg.command, msg)

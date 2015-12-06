@@ -6,10 +6,11 @@ import time
 import linked_list
 import subprocess
 
+notInDB = []
+inDBZeroCount = []
+inDBMoreThanOneCount = []
+
 def OPsPerLink(link):
-    notInDB = []
-    inDBZeroCount = []
-    inDBMoreThanOneCount = []
     bs = mini_node.BitcoinSocket(link)
     if bs.conn_ref or not bs.connect():
         sys.exit(0)
@@ -23,11 +24,11 @@ def OPsPerLink(link):
             time.sleep(2)
             r = "still exception after 5 API calls"
     if r == "still exception after 5 API calls":
-        notInDB.append(txHash)
+        notInDB.append(link)
     elif r != "still exception after 5 API calls" and r.json()['receive_count'] == 0:
-        inDBZeroCount.append(txHash)
+        inDBZeroCount.append(link)
     elif r != "still exception after 5 API calls" and r.json()['receive_count'] > 0:
-        inDBMoreThanOneCount.append(txHash)
+        inDBMoreThanOneCount.append(link)
     print("notInDB: ", notInDB)
     print("inDBZeroCount: ", inDBZeroCount)
     print("inDBMoreThanOneCount: ", inDBMoreThanOneCount)
@@ -37,6 +38,7 @@ def OPsPerLink(link):
     # bs.listen_forever()
     return
 
-l1 = linked_list.Link("67.172.198.9",8333)
-print("here")
-OPsPerLink(l1)
+if __name__ == "__main__":
+    l1 = linked_list.Link("67.172.198.9",8333)
+    print("here")
+    OPsPerLink(l1)

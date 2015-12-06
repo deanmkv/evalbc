@@ -77,6 +77,9 @@ class Link(object):
 	def __hash__(self):
 		return hash((self.ip, self.port))
 
+	def __repr__(self):
+		return str(self)
+
 # tests
 if __name__ == "__main__":
 	def test_combine():
