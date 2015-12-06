@@ -7,7 +7,7 @@ import subprocess
 def a_thread(*args, **kwargs):
 
 	OPsPerLink.OPsPerLink(kwargs['link'])
-	print("finished thread")
+	print("finished thread, %d remain" % threading.active_count())
 
 if __name__=="__main__":
 	subprocess.call("bash get_latest.sh", shell=True)
