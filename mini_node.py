@@ -89,8 +89,7 @@ class BitcoinSocket(object):
 				verack_rec = True
 
 			if iterations > 80:
-				print("stuck on ack? tid: ", threading.get_ident())
-				print('\ttarget:', link)
+				print("stuck on ack? tid: ", threading.get_ident(), '\n\ttarget: ', link)
 			iterations += 1
 
 	def send_transaction(self):
@@ -106,8 +105,7 @@ class BitcoinSocket(object):
 		while self._process_message(transaction=tx) != "donedone" and iterations < 100:
 			pass
 			if iterations > 80:
-				print("stuck on send? tid: ", threading.get_ident())
-				print('\ttarget:', link)
+				print("stuck on send? tid: ", threading.get_ident(), '\n\ttarget: ', link)
 			iterations += 1
 		# print("leaving send_transaction()")
 		return tx_inv.hash
