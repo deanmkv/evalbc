@@ -17,8 +17,10 @@ if __name__=="__main__":
 		threading.Thread(target=a_thread, kwargs={'link':link}).start()
 	
 	print("waiting for all threads to complete")
+	master_thread = threading.get_ident()
 	for i in threading.enumerate():
-		i.join()
+		if master_thread != i.get_ident():
+			i.join()
 
 	OPsPerLink.print_lists()
 	OPsPerLink.write_lists()

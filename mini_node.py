@@ -37,7 +37,7 @@ class BitcoinSocket(object):
 
 		val = BitcoinSocket._port_num
 		BitcoinSocket._port_num += 1
-		
+
 		port_lock.release()
 
 		return val
