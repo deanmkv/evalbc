@@ -38,6 +38,8 @@ def OPsPerLink(link):
     for x in range(0,5):
         try:
             r = requests.get('https://api.blockcypher.com/v1/btc/main/txs/' + base58.encode(txHash))
+            if r.status_code == 200:
+                break
         except Exception as e:
             strE = str(e)
             if ("request issue here " + strE) not in errorSet:
@@ -47,12 +49,15 @@ def OPsPerLink(link):
             # print("retrying api call for the ",x+1,"th time")
             time.sleep(2)
             r = "still exception after 5 API calls"
-    if r == "still exception after 5 API calls":
+    transJSON = r.json()
+    if r == "still exception after 5 API calls" or r.status_code == 404:
         notInDB.append(link)
-    elif r != "still exception after 5 API calls" and r.json()['receive_count'] == 0:
-        inDBZeroCount.append(link)
-    elif r != "still exception after 5 API calls" and r.json()['receive_count'] > 0:
-        inDBMoreThanOneCount.append(link)
+    elif r != "still exception after 5 API calls":
+        if 'receive_count' in transJSON:
+            if r.json()['receive_count'] == 0:
+                inDBZeroCount.append(link)
+            elif r.json()['receive_count'] > 0:
+                inDBMoreThanOneCount.append(link)
     print(errorSet)
     # bs.listen_forever()
     return
