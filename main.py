@@ -27,18 +27,21 @@ if __name__=="__main__":
 	# ip4list = custom_list()
 	print("starting to create all nodes")
 	unique_id = 10000  # start here to ensure len() = 5
-	for link in ip4list:
-		# a_thread(link=link)  # use only this line for single-threaded
-		th = threading.Thread(target=a_thread, kwargs={'link':link})
-		th.name = unique_id
-		th.start()
-		unique_id += 1
-	
-	print("waiting for all threads to complete")
-	master_thread = threading.current_thread().ident
-	for i in threading.enumerate():
-		if master_thread != i.ident:
-			i.join()
-
-	OPsPerLink.print_lists()
-	OPsPerLink.write_lists()
+	try:
+		for link in ip4list:
+			# a_thread(link=link)  # use only this line for single-threaded
+			th = threading.Thread(target=a_thread, kwargs={'link':link})
+			th.name = unique_id
+			th.start()
+			unique_id += 1
+		
+		print("waiting for all threads to complete")
+	except KeyboardInterrupt:
+		pass
+	finally:
+		master_thread = threading.current_thread().ident
+		for i in threading.enumerate():
+			if master_thread != i.ident:
+				i.join()
+		OPsPerLink.print_lists()
+		OPsPerLink.write_lists()
