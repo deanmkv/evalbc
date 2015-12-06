@@ -68,6 +68,12 @@ def print_lists():
     print("inDBMoreThanOneCount: ", inDBMoreThanOneCount)
     print("timeouts: ", timeouts)
 
+def print_populated_lists():
+    if len(inDBZeroCount) > 0:
+        print("inDBZeroCount: ", inDBZeroCount)
+    if len(inDBMoreThanOneCount) > 0:
+        print("inDBMoreThanOneCount: ", inDBMoreThanOneCount)
+
 def write_lists():
     if len(inDBMoreThanOneCount) > 0:
         with open("dbone.txt", 'w') as f:

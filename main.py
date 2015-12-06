@@ -8,6 +8,7 @@ def a_thread(*args, **kwargs):
 
 	OPsPerLink.OPsPerLink(kwargs['link'])
 	print("finish, %d remain" % threading.active_count())
+	OPsPerLink.print_populated_lists()
 
 def custom_list():
 	from linked_list import Link
